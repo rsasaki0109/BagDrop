@@ -1,0 +1,18 @@
+{
+  "name": "bagdrop",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.23.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @bagdrop/web dev",
+    "build": "pnpm --filter @bagdrop/web build",
+    "preview": "pnpm --filter @bagdrop/web preview",
+    "test": "pnpm --filter @bagdrop/web test",
+    "typecheck": "pnpm --filter @bagdrop/web typecheck",
+    "build:moon-core": "bash tools/build-moon-core.sh"
+  }
+}

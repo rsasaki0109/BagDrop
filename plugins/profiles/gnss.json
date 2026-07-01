@@ -1,0 +1,9 @@
+{
+  "id": "gnss-default",
+  "version": "0.0.0",
+  "metrics": {
+    "fixRatio": true,
+    "longestOutage": true,
+    "satelliteCount": "adapter"
+  }
+}

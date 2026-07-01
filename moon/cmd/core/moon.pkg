@@ -1,0 +1,25 @@
+import {
+  "bagdrop/moon/core" @lib,
+}
+
+options(
+  "is-main": true,
+  link: {
+    "wasm": {
+      "memory-limits": {
+        "min": 2,
+        "max": 256,
+      },
+      "exports": [
+        "core_create",
+        "core_register_topic",
+        "core_consume_batch",
+        "core_finish",
+        "core_result_ptr",
+        "core_result_len",
+        "core_free_result",
+        "core_destroy",
+      ],
+    },
+  },
+)

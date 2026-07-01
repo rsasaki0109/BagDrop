@@ -1,0 +1,12 @@
+{
+  "id": "generic-default",
+  "version": "0.0.0",
+  "rules": {
+    "topicGap": {
+      "severity": "warning"
+    },
+    "timestampRegression": {
+      "severity": "error"
+    }
+  }
+}

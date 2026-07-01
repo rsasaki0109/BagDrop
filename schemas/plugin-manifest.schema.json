@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bagdrop.local/schemas/plugin-manifest.schema.json",
+  "title": "BagDrop Plugin Manifest",
+  "type": "object",
+  "required": ["id", "version", "apiVersion", "entry", "capabilities", "outputs"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]*$"
+    },
+    "version": { "type": "string" },
+    "apiVersion": { "type": "string" },
+    "entry": { "type": "string" },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "requiredTypes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "enum": ["metrics", "series", "trajectory", "events", "intervals", "tables", "histograms", "health", "artifacts"]
+      }
+    }
+  },
+  "additionalProperties": false
+}

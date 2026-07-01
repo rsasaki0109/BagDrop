@@ -1,0 +1,19 @@
+{
+  "plugins": [
+    {
+      "id": "builtin.generic",
+      "version": "0.0.0",
+      "kind": "static"
+    },
+    {
+      "id": "builtin.trajectory",
+      "version": "0.0.0",
+      "kind": "static"
+    },
+    {
+      "id": "builtin.gnss-basic",
+      "version": "0.0.0",
+      "kind": "static"
+    }
+  ]
+}

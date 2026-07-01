@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bagdrop.local/schemas/result.schema.json",
+  "title": "BagDrop ResultBundle",
+  "type": "object",
+  "required": ["appVersion", "createdAt", "catalog", "metrics", "findings"],
+  "properties": {
+    "appVersion": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "catalog": { "type": "object" },
+    "metrics": { "type": "array" },
+    "findings": { "type": "array" }
+  },
+  "additionalProperties": true
+}

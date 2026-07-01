@@ -1,0 +1,17 @@
+{
+  "name": "BagDrop",
+  "short_name": "BagDrop",
+  "description": "Local-first ROS 2 bag triage",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0d110f",
+  "theme_color": "#18201d",
+  "icons": [
+    {
+      "src": "icons/bagdrop.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
