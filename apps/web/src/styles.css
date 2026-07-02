@@ -524,6 +524,35 @@ button {
   min-width: 0;
 }
 
+.topic-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.topic-filter-label {
+  font-size: 12px;
+  color: #aeb9b4;
+}
+
+.topic-filter-input {
+  flex: 1 1 220px;
+  min-height: 34px;
+  border-radius: 6px;
+  border: 1px solid #34413c;
+  background: #111713;
+  color: #e7f2ec;
+  padding: 0 10px;
+}
+
+.topic-filter-count {
+  font-size: 12px;
+  color: #8ea39a;
+  white-space: nowrap;
+}
+
 .finding-topic-link {
   margin-top: 8px;
   display: inline-flex;

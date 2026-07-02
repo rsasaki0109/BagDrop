@@ -77,6 +77,10 @@ export function findingCategory(finding: Finding): string {
     return "Stream";
   }
 
+  if (finding.id.startsWith("diagnostic-")) {
+    return "Diagnostics";
+  }
+
   return "Other";
 }
 

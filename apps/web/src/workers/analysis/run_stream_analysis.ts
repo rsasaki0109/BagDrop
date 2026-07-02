@@ -5,6 +5,7 @@ import type { MoonBitTopicResult } from "../moonbit/types";
 import { SqliteSegmentDeferredError, withReadonlySegmentDatabase } from "../sqlite/db_session";
 import { scanSegmentTopicStreams } from "../sqlite/stream_scan";
 import type { TopicMessageBatch } from "../../model/message_batch";
+import { DiagnosticFindingsRegistry } from "./diagnostic_findings";
 import { GeopointSeriesRegistry } from "./geopoint_series";
 import { IntervalSeriesRegistry } from "./interval_series";
 import { TrajectorySeriesRegistry } from "./trajectory_series";
@@ -29,6 +30,8 @@ export async function runStreamAnalysis(
   const trajectoryRegistry = new TrajectorySeriesRegistry();
   const geopointRegistry = new GeopointSeriesRegistry();
   const valueRegistry = new ValueSeriesRegistry();
+  const diagnosticRegistry = new DiagnosticFindingsRegistry();
+  const catalogIdByTopic = new Map(catalog.topics.map((topic) => [topic.name, topic.id]));
 
   let segmentsScanned = 0;
 
@@ -48,6 +51,7 @@ export async function runStreamAnalysis(
             trajectoryRegistry.consumeBatch(batch);
             geopointRegistry.consumeBatch(batch);
             valueRegistry.consumeBatch(batch);
+            diagnosticRegistry.consumeBatch(batch);
           }
         });
       });
@@ -95,7 +99,7 @@ export async function runStreamAnalysis(
 
   return {
     topics,
-    findings: [...findings, ...moonbitResult.findings],
+    findings: [...findings, ...moonbitResult.findings, ...diagnosticRegistry.finalize(catalogIdByTopic)],
     metrics: [
       {
         id: "stream-segments-scanned",

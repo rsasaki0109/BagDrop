@@ -77,7 +77,13 @@ fn CdrReader::skip_string(self : CdrReader) -> Bool {
   }
   let length = load_u32_le(self.payload, self.offset).to_int()
   self.offset = self.offset + 4
-  if length <= 0 || !self.can_read(length) {
+  if length < 0 {
+    return false
+  }
+  if length == 0 {
+    return true
+  }
+  if !self.can_read(length) {
     return false
   }
   self.offset = self.offset + length
@@ -123,6 +129,71 @@ fn CdrReader::skip_u16(self : CdrReader) -> Bool {
 ///|
 fn CdrReader::consumed_entire_payload(self : CdrReader) -> Bool {
   self.offset == self.payload.length()
+}
+
+///|
+fn CdrReader::skip_pose_stamped(self : CdrReader) -> Bool {
+  self.skip_header_stamp() && self.skip_string() && self.skip_doubles(7)
+}
+
+///|
+fn CdrReader::skip_diagnostic_key_value(self : CdrReader) -> Bool {
+  self.skip_string() && self.skip_string()
+}
+
+///|
+fn CdrReader::skip_diagnostic_key_values(self : CdrReader) -> Bool {
+  if !self.align(4) || !self.can_read(4) {
+    return false
+  }
+  let count = load_u32_le(self.payload, self.offset).to_int()
+  self.offset = self.offset + 4
+  for i = 0; i < count; i = i + 1 {
+    if !self.skip_diagnostic_key_value() {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn CdrReader::skip_diagnostic_status(self : CdrReader) -> Bool {
+  self.skip_u8() &&
+  self.align(4) &&
+  self.skip_string() &&
+  self.skip_string() &&
+  self.skip_string() &&
+  self.skip_diagnostic_key_values()
+}
+
+///|
+fn CdrReader::skip_diagnostic_statuses(self : CdrReader) -> Bool {
+  if !self.align(4) || !self.can_read(4) {
+    return false
+  }
+  let count = load_u32_le(self.payload, self.offset).to_int()
+  self.offset = self.offset + 4
+  for i = 0; i < count; i = i + 1 {
+    if !self.skip_diagnostic_status() {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn CdrReader::skip_pose_stamped_sequence(self : CdrReader) -> Bool {
+  if !self.align(4) || !self.can_read(4) {
+    return false
+  }
+  let count = load_u32_le(self.payload, self.offset).to_int()
+  self.offset = self.offset + 4
+  for i = 0; i < count; i = i + 1 {
+    if !self.skip_pose_stamped() {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -177,9 +248,33 @@ pub fn validate_geometry_msgs_pose_stamped(payload : Bytes) -> Bool {
   }
   let reader = CdrReader::new(payload)
   reader.skip_encapsulation() &&
+  reader.skip_pose_stamped() &&
+  reader.consumed_entire_payload()
+}
+
+///|
+pub fn validate_diagnostic_msgs_diagnostic_array(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
   reader.skip_header_stamp() &&
   reader.skip_string() &&
-  reader.skip_doubles(7) &&
+  reader.skip_diagnostic_statuses() &&
+  reader.consumed_entire_payload()
+}
+
+///|
+pub fn validate_nav_msgs_path(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
+  reader.skip_header_stamp() &&
+  reader.skip_string() &&
+  reader.skip_pose_stamped_sequence() &&
   reader.consumed_entire_payload()
 }
 
@@ -241,9 +336,11 @@ pub fn validate_known_cdr_payload(topic_type : String, payload : Bytes) -> Bool 
     "std_msgs/msg/Float64" => decode_std_msgs_float64(payload) is Some(_)
     "std_msgs/msg/Int32" => decode_std_msgs_int32(payload) is Some(_)
     "std_msgs/msg/UInt32" => decode_std_msgs_uint32(payload) is Some(_)
+    "diagnostic_msgs/msg/DiagnosticArray" => validate_diagnostic_msgs_diagnostic_array(payload)
     "geometry_msgs/msg/PoseStamped" => validate_geometry_msgs_pose_stamped(payload)
     "geometry_msgs/msg/PoseWithCovarianceStamped" => validate_geometry_msgs_pose_with_covariance_stamped(payload)
     "nav_msgs/msg/Odometry" => validate_nav_msgs_odometry(payload)
+    "nav_msgs/msg/Path" => validate_nav_msgs_path(payload)
     "sensor_msgs/msg/NavSatFix" => validate_sensor_msgs_nav_sat_fix(payload)
     "sensor_msgs/msg/Imu" => validate_sensor_msgs_imu(payload)
     _ => false
@@ -256,9 +353,11 @@ pub fn has_cdr_decoder(topic_type : String) -> Bool {
   topic_type == "std_msgs/msg/Float64" ||
   topic_type == "std_msgs/msg/Int32" ||
   topic_type == "std_msgs/msg/UInt32" ||
+  topic_type == "diagnostic_msgs/msg/DiagnosticArray" ||
   topic_type == "geometry_msgs/msg/PoseStamped" ||
   topic_type == "geometry_msgs/msg/PoseWithCovarianceStamped" ||
   topic_type == "nav_msgs/msg/Odometry" ||
+  topic_type == "nav_msgs/msg/Path" ||
   topic_type == "sensor_msgs/msg/NavSatFix" ||
   topic_type == "sensor_msgs/msg/Imu"
 }

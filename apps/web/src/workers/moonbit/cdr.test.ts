@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { uint8ArrayToBase64 } from "../../platform/base64";
 import {
+  buildMinimalDiagnosticMsgsDiagnosticArrayPayload,
   buildMinimalGeometryMsgsPoseStampedPayload,
   buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload,
   buildMinimalNavMsgsOdometryPayload,
+  buildMinimalNavMsgsPathPayload,
   buildMinimalSensorMsgsImuPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
   buildMinimalStdMsgsFloat32Payload,
@@ -13,16 +15,20 @@ import {
   decodeGeometryMsgsPoseStampedXY,
   decodeGeometryMsgsPoseWithCovarianceStampedXY,
   decodeNavMsgsOdometryXY,
+  decodeNavMsgsPathXY,
   decodeSensorMsgsNavSatFixLatLon,
   decodeStdMsgsFloat32,
   decodeStdMsgsFloat64,
   decodeStdMsgsInt32,
   decodeStdMsgsUInt32,
   isCdrLittleEndian,
+  summarizeDiagnosticMsgsDiagnosticArray,
+  validateDiagnosticMsgsDiagnosticArray,
   validateGeometryMsgsPoseStamped,
   validateGeometryMsgsPoseWithCovarianceStamped,
   validateKnownCdrPayload,
   validateNavMsgsOdometry,
+  validateNavMsgsPath,
   validateSensorMsgsImu,
   validateSensorMsgsNavSatFix
 } from "./cdr";
@@ -136,5 +142,44 @@ describe("cdr", () => {
   it("rejects truncated imu payloads", () => {
     const payload = buildMinimalSensorMsgsImuPayload().slice(0, 128);
     expect(validateSensorMsgsImu(payload)).toBe(false);
+  });
+
+  it("validates diagnostic_msgs/msg/DiagnosticArray payloads", () => {
+    const payload = buildMinimalDiagnosticMsgsDiagnosticArrayPayload();
+
+    expect(validateDiagnosticMsgsDiagnosticArray(payload)).toBe(true);
+    expect(validateKnownCdrPayload("diagnostic_msgs/msg/DiagnosticArray", payload)).toBe(true);
+    expect(summarizeDiagnosticMsgsDiagnosticArray(payload)).toEqual({
+      ok: 0,
+      warnings: 0,
+      errors: 1,
+      stale: 0,
+      sampleErrorName: "cpu"
+    });
+  });
+
+  it("validates nav_msgs/msg/Path payloads", () => {
+    const payload = buildMinimalNavMsgsPathPayload();
+
+    expect(validateNavMsgsPath(payload)).toBe(true);
+    expect(validateKnownCdrPayload("nav_msgs/msg/Path", payload)).toBe(true);
+    expect(decodeNavMsgsPathXY(payload)).toEqual([
+      { x: 0, y: 0 },
+      { x: 1, y: 2 }
+    ]);
+  });
+
+  it("decodes nav_msgs/msg/Path with custom points", () => {
+    const payload = buildMinimalNavMsgsPathPayload([
+      { x: 3.5, y: -1.25 },
+      { x: 0, y: 0 },
+      { x: 10, y: 20 }
+    ]);
+
+    expect(decodeNavMsgsPathXY(payload)).toEqual([
+      { x: 3.5, y: -1.25 },
+      { x: 0, y: 0 },
+      { x: 10, y: 20 }
+    ]);
   });
 });

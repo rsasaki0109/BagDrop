@@ -20,6 +20,7 @@ let state: AppState = {
   bundle: null,
   selectedTopicName: null,
   selectedPlotKind: "intervals",
+  topicFilter: "",
   error: null
 };
 
@@ -57,6 +58,7 @@ const actions: AppActions = {
       bundle: null,
       selectedTopicName: null,
       selectedPlotKind: "intervals",
+      topicFilter: "",
       error: null
     });
   },
@@ -90,6 +92,12 @@ const actions: AppActions = {
     setState({
       ...state,
       selectedPlotKind: plotKind
+    });
+  },
+  onTopicFilterChange: (query) => {
+    setState({
+      ...state,
+      topicFilter: query
     });
   }
 };
@@ -128,6 +136,7 @@ async function scanFiles(files: Parameters<BagWorkerClient["scan"]>[0]): Promise
       bundle,
       selectedTopicName: null,
       selectedPlotKind: "intervals",
+      topicFilter: "",
       error: null
     });
   } catch (error) {

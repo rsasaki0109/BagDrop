@@ -6,6 +6,7 @@ import { drawGeopointChart } from "../charts/latlon_chart";
 import { drawValueChart } from "../charts/value_chart";
 import { computeBagHealth, renderBagHealthBadge } from "./bag_health";
 import { renderFindingsPanel, renderFindingsSummary, summarizeFindings } from "./findings_panel";
+import { filterTopics } from "./topic_filter";
 import { formatBytes, formatNumber } from "../ui/format";
 
 export type TopicPlotKind = "intervals" | "xy" | "latlon" | "value";
@@ -16,6 +17,7 @@ export interface AppState {
   bundle: ResultBundle | null;
   selectedTopicName: string | null;
   selectedPlotKind: TopicPlotKind;
+  topicFilter: string;
   error: string | null;
 }
 
@@ -29,6 +31,7 @@ export interface AppActions {
   onExportJson(): void;
   onTopicSelect(topicName: string | null): void;
   onPlotKindSelect(plotKind: TopicPlotKind): void;
+  onTopicFilterChange(query: string): void;
 }
 
 export function renderApp(root: HTMLElement, state: AppState, actions: AppActions): void {
@@ -74,7 +77,7 @@ export function renderApp(root: HTMLElement, state: AppState, actions: AppAction
 
         <section class="dashboard">
           ${renderStatus(state)}
-          ${state.bundle ? renderOverview(state.bundle, state.selectedTopicName, state.selectedPlotKind) : renderEmptyDashboard()}
+          ${state.bundle ? renderOverview(state.bundle, state.selectedTopicName, state.selectedPlotKind, state.topicFilter) : renderEmptyDashboard()}
         </section>
       </section>
     </main>
@@ -137,7 +140,12 @@ function renderEmptyDashboard(): string {
   `;
 }
 
-function renderOverview(bundle: ResultBundle, selectedTopicName: string | null, selectedPlotKind: TopicPlotKind): string {
+function renderOverview(
+  bundle: ResultBundle,
+  selectedTopicName: string | null,
+  selectedPlotKind: TopicPlotKind,
+  topicFilter: string
+): string {
   const catalog = bundle.catalog;
   const inventory = catalog.inventory;
   const findingSummary = summarizeFindings(bundle.findings);
@@ -186,7 +194,7 @@ function renderOverview(bundle: ResultBundle, selectedTopicName: string | null, 
         <h2>Topics</h2>
         <span>${catalog.storageStatus === "sqlite_pending" ? "Partial catalog" : catalog.storageStatus}</span>
       </div>
-      ${renderTopics(bundle, selectedTopicName)}
+      ${renderTopics(bundle, selectedTopicName, topicFilter)}
     </section>
 
     ${renderTopicPlotPanel(bundle, selectedTopicName, selectedPlotKind)}
@@ -261,7 +269,7 @@ function renderFilesTable(bundle: ResultBundle): string {
   `;
 }
 
-function renderTopics(bundle: ResultBundle, selectedTopicName: string | null): string {
+function renderTopics(bundle: ResultBundle, selectedTopicName: string | null, topicFilter: string): string {
   if (bundle.catalog.topics.length === 0) {
     return `
       <div class="quiet-message">
@@ -270,7 +278,8 @@ function renderTopics(bundle: ResultBundle, selectedTopicName: string | null): s
     `;
   }
 
-  const rows = bundle.catalog.topics
+  const filteredTopics = filterTopics(bundle.catalog.topics, topicFilter);
+  const rows = filteredTopics
     .map(
       (topic) => `
         <tr class="topic-row ${selectedTopicName === topic.name ? "is-selected" : ""}" data-topic-name="${escapeHtml(topic.name)}" tabindex="0" role="button" aria-pressed="${selectedTopicName === topic.name ? "true" : "false"}">
@@ -287,6 +296,21 @@ function renderTopics(bundle: ResultBundle, selectedTopicName: string | null): s
     .join("");
 
   return `
+    <div class="topic-filter-row">
+      <label class="topic-filter-label" for="topic-filter">Filter topics</label>
+      <input
+        id="topic-filter"
+        class="topic-filter-input"
+        type="search"
+        placeholder="Search name or type"
+        value="${escapeHtml(topicFilter)}"
+      />
+      <span class="topic-filter-count">${formatNumber(filteredTopics.length)} / ${formatNumber(bundle.catalog.topics.length)}</span>
+    </div>
+    ${
+      filteredTopics.length === 0
+        ? `<div class="quiet-message">No topics match "${escapeHtml(topicFilter.trim())}".</div>`
+        : `
     <div class="table-wrap">
       <table>
         <thead>
@@ -302,7 +326,8 @@ function renderTopics(bundle: ResultBundle, selectedTopicName: string | null): s
         </thead>
         <tbody>${rows}</tbody>
       </table>
-    </div>
+    </div>`
+    }
   `;
 }
 
@@ -346,7 +371,9 @@ function renderTopicPlotPanel(
           : intervalCount;
   const plotCopy =
     activePlotKind === "xy"
-      ? "Pose projected to x/y. Green marks the first pose and orange marks the last."
+      ? topic.type === "nav_msgs/msg/Path"
+        ? "Path poses projected to x/y. Green marks the first pose and orange marks the last."
+        : "Pose projected to x/y. Green marks the first pose and orange marks the last."
       : activePlotKind === "latlon"
         ? "NavSatFix latitude and longitude track. Green marks the first fix and orange marks the last."
         : activePlotKind === "value"
@@ -484,6 +511,10 @@ function bindEvents(root: HTMLElement, state: AppState, actions: AppActions): vo
       });
     });
   }
+
+  root.querySelector<HTMLInputElement>("#topic-filter")?.addEventListener("input", (event) => {
+    actions.onTopicFilterChange((event.currentTarget as HTMLInputElement).value);
+  });
 
   root.querySelector<HTMLInputElement>("#file-input")?.addEventListener("change", (event) => {
     const input = event.currentTarget as HTMLInputElement;

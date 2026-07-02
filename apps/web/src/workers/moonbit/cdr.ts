@@ -46,27 +46,36 @@ class CdrReader {
   }
 
   skipString(): boolean {
+    return this.readString() !== null;
+  }
+
+  readString(): string | null {
     if (!this.align(4)) {
-      return false;
+      return null;
     }
 
     const length = this.readUint32();
-    if (length === null || length === 0) {
-      return false;
+    if (length === null) {
+      return null;
+    }
+
+    if (length === 0) {
+      return "";
     }
 
     if (!this.canRead(length)) {
-      return false;
+      return null;
     }
 
+    const bytes = this.payload.subarray(this.offset, this.offset + length);
     this.offset += length;
     const padding = (4 - (length % 4)) % 4;
     if (!this.canRead(padding)) {
-      return false;
+      return null;
     }
 
     this.offset += padding;
-    return true;
+    return new TextDecoder().decode(bytes);
   }
 
   skipDoubles(count: number): boolean {
@@ -122,6 +131,54 @@ class CdrReader {
 
   consumedEntirePayload(): boolean {
     return this.offset === this.payload.length;
+  }
+
+  skipSequence(skipItem: () => boolean): boolean {
+    if (!this.align(4)) {
+      return false;
+    }
+
+    const length = this.readUint32();
+    if (length === null) {
+      return false;
+    }
+
+    for (let index = 0; index < length; index += 1) {
+      if (!skipItem()) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  skipPoseStampedFields(): boolean {
+    return this.skipHeaderStamp() && this.skipString() && this.skipDoubles(7);
+  }
+
+  skipDiagnosticKeyValue(): boolean {
+    return this.skipString() && this.skipString();
+  }
+
+  skipDiagnosticStatus(): boolean {
+    return (
+      this.skipUint8() &&
+      this.align(4) &&
+      this.skipString() &&
+      this.skipString() &&
+      this.skipString() &&
+      this.skipSequence(() => this.skipDiagnosticKeyValue())
+    );
+  }
+
+  readUint8(): number | null {
+    if (!this.canRead(1)) {
+      return null;
+    }
+
+    const value = this.payload[this.offset];
+    this.offset += 1;
+    return value;
   }
 }
 
@@ -215,6 +272,19 @@ export function decodeNavMsgsOdometryXY(payload: Uint8Array): { x: number; y: nu
   return { x, y };
 }
 
+export function validateGeometryMsgsPoseStamped(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return reader.skipPoseStampedFields() && reader.consumedEntirePayload();
+}
+
 export function validateGeometryMsgsPoseWithCovarianceStamped(payload: Uint8Array): boolean {
   if (!isCdrLittleEndian(payload)) {
     return false;
@@ -233,7 +303,7 @@ export function validateGeometryMsgsPoseWithCovarianceStamped(payload: Uint8Arra
   );
 }
 
-export function validateGeometryMsgsPoseStamped(payload: Uint8Array): boolean {
+export function validateDiagnosticMsgsDiagnosticArray(payload: Uint8Array): boolean {
   if (!isCdrLittleEndian(payload)) {
     return false;
   }
@@ -246,9 +316,135 @@ export function validateGeometryMsgsPoseStamped(payload: Uint8Array): boolean {
   return (
     reader.skipHeaderStamp() &&
     reader.skipString() &&
-    reader.skipDoubles(7) &&
+    reader.skipSequence(() => reader.skipDiagnosticStatus()) &&
     reader.consumedEntirePayload()
   );
+}
+
+export interface DiagnosticArraySummary {
+  ok: number;
+  warnings: number;
+  errors: number;
+  stale: number;
+  sampleErrorName: string | null;
+}
+
+export function summarizeDiagnosticMsgsDiagnosticArray(payload: Uint8Array): DiagnosticArraySummary | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  const summary: DiagnosticArraySummary = {
+    ok: 0,
+    warnings: 0,
+    errors: 0,
+    stale: 0,
+    sampleErrorName: null
+  };
+
+  let parsed = true;
+  reader.skipSequence(() => {
+    const level = reader.readUint8();
+    if (level === null || !reader.align(4)) {
+      parsed = false;
+      return false;
+    }
+
+    const name = reader.readString();
+    const message = reader.readString();
+    const hardwareId = reader.readString();
+    if (name === null || message === null || hardwareId === null) {
+      parsed = false;
+      return false;
+    }
+
+    if (!reader.skipSequence(() => reader.skipDiagnosticKeyValue())) {
+      parsed = false;
+      return false;
+    }
+
+    if (level === 0) {
+      summary.ok += 1;
+    } else if (level === 1) {
+      summary.warnings += 1;
+    } else if (level === 2) {
+      summary.errors += 1;
+      if (summary.sampleErrorName === null) {
+        summary.sampleErrorName = name.length > 0 ? name : "diagnostic error";
+      }
+    } else if (level === 3) {
+      summary.stale += 1;
+      summary.warnings += 1;
+    }
+
+    return true;
+  });
+
+  if (!parsed || !reader.consumedEntirePayload()) {
+    return null;
+  }
+
+  return summary;
+}
+
+export function validateNavMsgsPath(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipSequence(() => reader.skipPoseStampedFields()) &&
+    reader.consumedEntirePayload()
+  );
+}
+
+export function decodeNavMsgsPathXY(payload: Uint8Array): { x: number; y: number }[] | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  const points: { x: number; y: number }[] = [];
+  let parsed = true;
+
+  reader.skipSequence(() => {
+    if (!reader.skipHeaderStamp() || !reader.skipString()) {
+      parsed = false;
+      return false;
+    }
+
+    const x = reader.readFloat64();
+    const y = reader.readFloat64();
+    if (x === null || y === null || !reader.skipDoubles(5)) {
+      parsed = false;
+      return false;
+    }
+
+    points.push({ x, y });
+    return true;
+  });
+
+  if (!parsed || !reader.consumedEntirePayload()) {
+    return null;
+  }
+
+  return points;
 }
 
 export function validateNavMsgsOdometry(payload: Uint8Array): boolean {
@@ -346,9 +542,11 @@ export function hasCdrDecoder(topicType: string): boolean {
     topicType === "std_msgs/msg/Float64" ||
     topicType === "std_msgs/msg/Int32" ||
     topicType === "std_msgs/msg/UInt32" ||
+    topicType === "diagnostic_msgs/msg/DiagnosticArray" ||
     topicType === "geometry_msgs/msg/PoseStamped" ||
     topicType === "geometry_msgs/msg/PoseWithCovarianceStamped" ||
     topicType === "nav_msgs/msg/Odometry" ||
+    topicType === "nav_msgs/msg/Path" ||
     topicType === "sensor_msgs/msg/NavSatFix" ||
     topicType === "sensor_msgs/msg/Imu"
   );
@@ -364,12 +562,16 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
       return decodeStdMsgsInt32(payload) !== null;
     case "std_msgs/msg/UInt32":
       return decodeStdMsgsUInt32(payload) !== null;
+    case "diagnostic_msgs/msg/DiagnosticArray":
+      return validateDiagnosticMsgsDiagnosticArray(payload);
     case "geometry_msgs/msg/PoseStamped":
       return validateGeometryMsgsPoseStamped(payload);
     case "geometry_msgs/msg/PoseWithCovarianceStamped":
       return validateGeometryMsgsPoseWithCovarianceStamped(payload);
     case "nav_msgs/msg/Odometry":
       return validateNavMsgsOdometry(payload);
+    case "nav_msgs/msg/Path":
+      return validateNavMsgsPath(payload);
     case "sensor_msgs/msg/NavSatFix":
       return validateSensorMsgsNavSatFix(payload);
     case "sensor_msgs/msg/Imu":
@@ -472,6 +674,71 @@ export function buildMinimalSensorMsgsNavSatFixPayload(position: { lat?: number;
   view.setFloat64(40, position.alt ?? 0, true);
 
   return payload;
+}
+
+function writeCdrString(payload: Uint8Array, offset: number, value: string): number {
+  const aligned = offset + ((4 - (offset % 4)) % 4);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setUint32(aligned, value.length, true);
+  let next = aligned + 4;
+  for (let index = 0; index < value.length; index += 1) {
+    payload[next + index] = value.charCodeAt(index);
+  }
+  next += value.length;
+  const padding = (4 - (value.length % 4)) % 4;
+  return next + padding;
+}
+
+function writeCdrSequenceHeader(payload: Uint8Array, offset: number, length: number): number {
+  const aligned = offset + ((4 - (offset % 4)) % 4);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setUint32(aligned, length, true);
+  return aligned + 4;
+}
+
+export function buildMinimalDiagnosticMsgsDiagnosticArrayPayload(
+  statuses: readonly { level: number; name?: string; message?: string; hardwareId?: string }[] = [{ level: 2, name: "cpu", message: "overheated" }]
+): Uint8Array {
+  const payload = new Uint8Array(256);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  let offset = writeCdrSequenceHeader(payload, 20, statuses.length);
+  for (const status of statuses) {
+    payload[offset] = status.level;
+    offset += 1;
+    offset = writeCdrString(payload, offset, status.name ?? "node");
+    offset = writeCdrString(payload, offset, status.message ?? "fault");
+    offset = writeCdrString(payload, offset, status.hardwareId ?? "hw");
+    offset = writeCdrSequenceHeader(payload, offset, 0);
+  }
+
+  return payload.slice(0, offset);
+}
+
+export function buildMinimalNavMsgsPathPayload(
+  points: readonly { x?: number; y?: number; z?: number }[] = [{ x: 0, y: 0 }, { x: 1, y: 2 }]
+): Uint8Array {
+  const payload = new Uint8Array(512);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  let offset = writeCdrSequenceHeader(payload, 20, points.length);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+
+  for (const point of points) {
+    offset += 8;
+    offset = writeCdrString(payload, offset, "map");
+    const poseOffset = offset + ((8 - (offset % 8)) % 8);
+    view.setFloat64(poseOffset, point.x ?? 0, true);
+    view.setFloat64(poseOffset + 8, point.y ?? 0, true);
+    view.setFloat64(poseOffset + 16, point.z ?? 0, true);
+    offset = poseOffset + 56;
+  }
+
+  return payload.slice(0, offset);
 }
 
 export function buildMinimalSensorMsgsImuPayload(motion: {

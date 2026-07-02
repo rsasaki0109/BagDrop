@@ -6,11 +6,15 @@ BagDrop currently decodes CDR payloads for:
 - `std_msgs/msg/Float64`
 - `std_msgs/msg/Int32`
 - `std_msgs/msg/UInt32`
+- `diagnostic_msgs/msg/DiagnosticArray`
 - `geometry_msgs/msg/PoseStamped`
 - `geometry_msgs/msg/PoseWithCovarianceStamped`
 - `nav_msgs/msg/Odometry`
+- `nav_msgs/msg/Path`
 - `sensor_msgs/msg/NavSatFix`
 - `sensor_msgs/msg/Imu`
+
+Diagnostic arrays also feed topic-level diagnostic findings during stream analysis.
 
 Other types still pass through stream analysis with timestamp statistics only. The initial generated decoder target list is:
 

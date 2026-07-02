@@ -4,7 +4,8 @@ import { base64ToUint8Array } from "../../platform/base64";
 import {
   decodeGeometryMsgsPoseStampedXY,
   decodeGeometryMsgsPoseWithCovarianceStampedXY,
-  decodeNavMsgsOdometryXY
+  decodeNavMsgsOdometryXY,
+  decodeNavMsgsPathXY
 } from "../moonbit/cdr";
 
 export type { TopicTrajectoryPoint };
@@ -14,26 +15,34 @@ export const TRAJECTORY_SERIES_MAX_POINTS = 2000;
 const TRAJECTORY_TOPIC_TYPES = new Set([
   "geometry_msgs/msg/PoseStamped",
   "geometry_msgs/msg/PoseWithCovarianceStamped",
-  "nav_msgs/msg/Odometry"
+  "nav_msgs/msg/Odometry",
+  "nav_msgs/msg/Path"
 ]);
 
 function decodeTrajectoryXY(
   topicType: string,
   payload: Uint8Array
-): { x: number; y: number } | null {
+): { x: number; y: number }[] {
   if (topicType === "nav_msgs/msg/Odometry") {
-    return decodeNavMsgsOdometryXY(payload);
+    const point = decodeNavMsgsOdometryXY(payload);
+    return point ? [point] : [];
   }
 
   if (topicType === "geometry_msgs/msg/PoseStamped") {
-    return decodeGeometryMsgsPoseStampedXY(payload);
+    const point = decodeGeometryMsgsPoseStampedXY(payload);
+    return point ? [point] : [];
   }
 
   if (topicType === "geometry_msgs/msg/PoseWithCovarianceStamped") {
-    return decodeGeometryMsgsPoseWithCovarianceStampedXY(payload);
+    const point = decodeGeometryMsgsPoseWithCovarianceStampedXY(payload);
+    return point ? [point] : [];
   }
 
-  return null;
+  if (topicType === "nav_msgs/msg/Path") {
+    return decodeNavMsgsPathXY(payload) ?? [];
+  }
+
+  return [];
 }
 
 export function downsampleTrajectorySeries(
@@ -70,8 +79,8 @@ class TrajectorySeriesCollector {
       try {
         const payload = base64ToUint8Array(encodedPayload);
         const position = decodeTrajectoryXY(batch.topicType, payload);
-        if (position) {
-          this.points.push(position);
+        for (const point of position) {
+          this.points.push(point);
         }
       } catch {
         // Ignore malformed payloads during trajectory extraction.

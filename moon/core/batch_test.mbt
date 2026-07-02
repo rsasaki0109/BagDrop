@@ -187,6 +187,44 @@ test "consume batch decodes geometry_msgs pose with covariance stamped payloads"
 }
 
 ///|
+test "consume batch decodes diagnostic_msgs diagnostic array payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":6,\"name\":\"/diagnostics\",\"type\":\"diagnostic_msgs/msg/DiagnosticArray\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/diagnostics\",\"topicType\":\"diagnostic_msgs/msg/DiagnosticArray\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[64],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAABAAAAAgAAAAMAAABjcHUACgAAAG92ZXJoZWF0ZWQAAAIAAABodwAAAAAAAA==\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/diagnostics") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
+test "consume batch decodes nav_msgs path payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":7,\"name\":\"/plan\",\"type\":\"nav_msgs/msg/Path\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/plan\",\"topicType\":\"nav_msgs/msg/Path\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[168],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAACAAAAAAAAAAAAAAADAAAAbWFwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAbWFwAAAAAAAAAPA/AAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/plan") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
 test "finish writes result json and count mismatch finding" {
   let state = CoreState::new()
   ignore(state.register_topic_json(
