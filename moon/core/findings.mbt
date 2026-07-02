@@ -1,8 +1,8 @@
 ///|
-const LARGE_GAP_WARNING_NS : Double = 5_000_000_000.0
+const LARGE_GAP_WARNING_NS : Int64 = 5_000_000_000L
 
 ///|
-fn format_gap_seconds(gap_ns : Int) -> String {
+fn format_gap_seconds(gap_ns : Int64) -> String {
   (gap_ns.to_double() / 1_000_000_000.0).to_string() + " s"
 }
 
@@ -12,7 +12,7 @@ fn topic_status(topic : TopicState) -> String {
     Some(expected) if expected != topic.message_count => "error"
     _ =>
       match topic.max_gap_ns {
-        Some(gap) if gap.to_double() >= LARGE_GAP_WARNING_NS => "warning"
+        Some(gap) if gap >= LARGE_GAP_WARNING_NS => "warning"
         _ => "ok"
       }
   }
@@ -37,7 +37,7 @@ fn count_mismatch_finding(topic : TopicState, expected : Int) -> Json {
 }
 
 ///|
-fn large_gap_finding(topic : TopicState, gap_ns : Int) -> Json {
+fn large_gap_finding(topic : TopicState, gap_ns : Int64) -> Json {
   Json::object({
     "id": Json::string("stream-large-gap-" + topic.topic_id.to_string()),
     "severity": Json::string("warning"),
@@ -62,7 +62,7 @@ fn build_findings(topics : Map[String, TopicState]) -> Array[Json] {
         findings.push(count_mismatch_finding(topic, expected))
       _ =>
         match topic.max_gap_ns {
-          Some(gap) if gap.to_double() >= LARGE_GAP_WARNING_NS =>
+          Some(gap) if gap >= LARGE_GAP_WARNING_NS =>
             findings.push(large_gap_finding(topic, gap))
           _ => ()
         }

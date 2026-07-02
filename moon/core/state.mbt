@@ -5,10 +5,10 @@ pub(all) struct TopicState {
   topic_id : Int
   catalog_count : Int?
   mut message_count : Int
-  mut min_timestamp_ns : Int?
-  mut max_timestamp_ns : Int?
-  mut max_gap_ns : Int?
-  mut previous_timestamp_ns : Int?
+  mut min_timestamp_ns : Int64?
+  mut max_timestamp_ns : Int64?
+  mut max_gap_ns : Int64?
+  mut previous_timestamp_ns : Int64?
   mut payloads_decoded : Int
   mut decode_errors : Int
 }
@@ -52,24 +52,24 @@ pub fn CoreState::register_topic(
 pub fn CoreState::consume_timestamp(
   self : CoreState,
   topic_name : String,
-  timestamp_ns : Int,
+  timestamp_ns : Int64,
 ) -> Unit {
   guard self.topics.get(topic_name) is Some(topic) else { return }
   topic.message_count = topic.message_count + 1
   topic.min_timestamp_ns = match topic.min_timestamp_ns {
     None => Some(timestamp_ns)
-    Some(current) => Some(min_int(current, timestamp_ns))
+    Some(current) => Some(min_int64(current, timestamp_ns))
   }
   topic.max_timestamp_ns = match topic.max_timestamp_ns {
     None => Some(timestamp_ns)
-    Some(current) => Some(max_int(current, timestamp_ns))
+    Some(current) => Some(max_int64(current, timestamp_ns))
   }
   match topic.previous_timestamp_ns {
     Some(previous) => {
       let gap = timestamp_ns - previous
       topic.max_gap_ns = match topic.max_gap_ns {
         None => Some(gap)
-        Some(current) => Some(max_int(current, gap))
+        Some(current) => Some(max_int64(current, gap))
       }
     }
     None => ()
@@ -106,7 +106,7 @@ pub fn CoreState::mean_rate_hz(topic : TopicState) -> Double? {
   }
 }
 
-fn min_int(a : Int, b : Int) -> Int {
+fn min_int64(a : Int64, b : Int64) -> Int64 {
   if a < b {
     a
   } else {
@@ -114,7 +114,7 @@ fn min_int(a : Int, b : Int) -> Int {
   }
 }
 
-fn max_int(a : Int, b : Int) -> Int {
+fn max_int64(a : Int64, b : Int64) -> Int64 {
   if a > b {
     a
   } else {

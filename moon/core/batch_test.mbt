@@ -71,3 +71,41 @@ test "finish writes result json and count mismatch finding" {
   assert_true(result.contains("\"status\":\"error\""))
   assert_true(result.contains("\"catalogCount\":3"))
 }
+
+///|
+test "finish emits large gap warning for int64 timestamps" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":2,\"name\":\"/scan\",\"type\":\"sensor_msgs/msg/LaserScan\",\"serializationFormat\":\"cdr\",\"catalogCount\":2}",
+    ),
+  ))
+  ignore(state.consume_batch_json(
+    @utf8.encode(
+      "{\"v\":1,\"topicName\":\"/scan\",\"topicType\":\"sensor_msgs/msg/LaserScan\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[0,6000000000],\"payloadSizesBytes\":[1,1],\"payloadsBase64\":[]}",
+    ),
+  ))
+  let result = state.to_result_json()
+  assert_true(result.contains("stream-large-gap-2"))
+  assert_true(result.contains("\"status\":\"warning\""))
+  assert_true(result.contains("\"maxGapNs\":6000000000"))
+}
+
+///|
+test "consume batch preserves timestamps beyond int32 range" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":3,\"name\":\"/wide\",\"type\":\"std_msgs/msg/Float64\",\"serializationFormat\":\"cdr\",\"catalogCount\":2}",
+    ),
+  ))
+  ignore(state.consume_batch_json(
+    @utf8.encode(
+      "{\"v\":1,\"topicName\":\"/wide\",\"topicType\":\"std_msgs/msg/Float64\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[3000000000,9000000000000],\"payloadSizesBytes\":[1,1],\"payloadsBase64\":[]}",
+    ),
+  ))
+  guard state.topics.get("/wide") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.max_gap_ns, content="Some(8997000000000)")
+}

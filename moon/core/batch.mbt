@@ -15,7 +15,7 @@ pub fn CoreState::consume_batch_json(
   guard obj.get("timestampsNs") is Some(Array(items)) else { return 1 }
   for item in items {
     guard item is Number(timestamp, ..) else { continue }
-    self.consume_timestamp(topic_name, timestamp.to_int())
+    self.consume_timestamp(topic_name, timestamp.to_int64())
   }
   match obj.get("payloadsBase64") {
     Some(Array(payload_items)) => self.consume_payloads_base64(topic_name, payload_items)
