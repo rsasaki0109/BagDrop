@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:browser": "node tests/direct_file_vfs_smoke.mjs && node tests/opfs_staging_smoke.mjs",
+    "record:demo": "node tests/record_demo.mjs",
     "typecheck": "tsc -b --pretty false"
   },
   "devDependencies": {

@@ -6,6 +6,15 @@ The bag Worker scans SQLite catalogs, streams topic timestamps in batches, and f
 
 **Live demo:** https://rsasaki0109.github.io/BagDrop/
 
+Recorded UI flows (Playwright + ffmpeg):
+
+| Demo | GIF |
+| --- | --- |
+| Clean bag → topic plots | ![Clean bag demo](docs/assets/demo-clean-bag.gif) |
+| Bag with findings | ![Findings demo](docs/assets/demo-findings.gif) |
+
+Regenerate with `pnpm --filter @bagdrop/web record:demo` (requires Playwright Chromium and ffmpeg).
+
 ## Example Result
 
 BagDrop turns a dropped rosbag2 SQLite segment into a local `ResultBundle` without uploading bytes.
@@ -46,6 +55,8 @@ flowchart LR
 ```
 
 Both GNSS and odometry payloads decode successfully. This is the “all green” path.
+
+The GIF above shows the same flow in the live UI: drop a `.db3`, review **Healthy** bag health, then open `/odom` and `/temperature` topic plots.
 
 **Topic plots**
 
@@ -120,6 +131,8 @@ Select a topic row to open the plot panel below the Topics table. Available tabs
 ```
 
 Try it live: drop a bag at https://rsasaki0109.github.io/BagDrop/ — findings appear in the right-hand panel with severity pills, topic badges, and evidence rows.
+
+The findings GIF uses the same synthetic `.db3` shape as the golden export. Live scans surface CDR decode failures and large timestamp gaps; the golden JSON also includes a deliberate stream count mismatch for documentation.
 
 ### Regenerate golden exports
 

@@ -84,7 +84,7 @@ export async function createRosbagLikeDb() {
 export async function expectReadyRosbagScan(page) {
   await page.getByRole("cell", { name: "/odom", exact: true }).waitFor({ timeout: 15_000 });
   await page.getByRole("cell", { name: "nav_msgs/msg/Odometry", exact: true }).waitFor({ timeout: 15_000 });
-  await page.locator(".metric-card").filter({ hasText: "Status" }).getByText("ready", { exact: true }).waitFor({
+  await page.locator(".metric-card").filter({ hasText: "Storage" }).getByText("ready", { exact: true }).waitFor({
     timeout: 15_000
   });
 }
