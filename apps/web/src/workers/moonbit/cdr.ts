@@ -171,6 +171,26 @@ class CdrReader {
     );
   }
 
+  readDiagnosticStatusLevelAndName(): { level: number; name: string } | null {
+    const level = this.readUint8();
+    if (level === null || !this.align(4)) {
+      return null;
+    }
+
+    const name = this.readString();
+    const message = this.readString();
+    const hardwareId = this.readString();
+    if (name === null || message === null || hardwareId === null) {
+      return null;
+    }
+
+    if (!this.skipSequence(() => this.skipDiagnosticKeyValue())) {
+      return null;
+    }
+
+    return { level, name };
+  }
+
   readUint8(): number | null {
     if (!this.canRead(1)) {
       return null;
@@ -349,25 +369,13 @@ export function summarizeDiagnosticMsgsDiagnosticArray(payload: Uint8Array): Dia
 
   let parsed = true;
   reader.skipSequence(() => {
-    const level = reader.readUint8();
-    if (level === null || !reader.align(4)) {
+    const status = reader.readDiagnosticStatusLevelAndName();
+    if (status === null) {
       parsed = false;
       return false;
     }
 
-    const name = reader.readString();
-    const message = reader.readString();
-    const hardwareId = reader.readString();
-    if (name === null || message === null || hardwareId === null) {
-      parsed = false;
-      return false;
-    }
-
-    if (!reader.skipSequence(() => reader.skipDiagnosticKeyValue())) {
-      parsed = false;
-      return false;
-    }
-
+    const { level, name } = status;
     if (level === 0) {
       summary.ok += 1;
     } else if (level === 1) {
