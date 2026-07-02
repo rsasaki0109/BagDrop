@@ -1,8 +1,9 @@
 # Supported Types
 
-BagDrop currently decodes CDR payloads for a small starter set in the MoonBit core. The first implemented type is:
+BagDrop currently decodes CDR payloads for:
 
 - `std_msgs/msg/Float64`
+- `nav_msgs/msg/Odometry`
 
 Other types still pass through stream analysis with timestamp statistics only. The initial generated decoder target list is:
 

@@ -2,6 +2,7 @@ import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import { describe, expect, it } from "vitest";
 import type { BagCatalog } from "../../model/result";
 import type { WorkerFileRef } from "../../model/worker_messages";
+import { buildMinimalNavMsgsOdometryPayload } from "../moonbit/cdr";
 import { runStreamAnalysis } from "./run_stream_analysis";
 import { TypeScriptMoonBitCoreBackend, catalogTopicToRegistration } from "../moonbit/typescript_backend";
 import { MOONBIT_CORE_STATUS_OK } from "../moonbit/types";
@@ -89,7 +90,9 @@ describe("runStreamAnalysis", () => {
         name: "/odom",
         status: "ok",
         maxGapNs: 1_000_000_000,
-        meanRateHz: 1.5
+        meanRateHz: 1.5,
+        decodedPayloads: 3,
+        decodeErrors: 0
       })
     );
     expect(analysis.findings).toEqual([]);
@@ -107,6 +110,7 @@ describe("runStreamAnalysis", () => {
 async function createRosbagLikeDb(): Promise<Uint8Array> {
   const sqlite3 = await sqlite3InitModule();
   const db = new sqlite3.oo1.DB(":memory:");
+  const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload());
 
   try {
     db.exec(`
@@ -127,13 +131,18 @@ async function createRosbagLikeDb(): Promise<Uint8Array> {
         VALUES (1, '/odom', 'nav_msgs/msg/Odometry', 'cdr');
       INSERT INTO messages(id, topic_id, timestamp, data)
         VALUES
-          (1, 1, 1000000000, X'00'),
-          (2, 1, 2000000000, X'00'),
-          (3, 1, 3000000000, X'00');
+          (1, 1, 1000000000, ${odomPayload}),
+          (2, 1, 2000000000, ${odomPayload}),
+          (3, 1, 3000000000, ${odomPayload});
     `);
 
     return sqlite3.capi.sqlite3_js_db_export(db);
   } finally {
     db.close();
   }
+}
+
+function sqliteBlobLiteral(payload: Uint8Array): string {
+  const hex = [...payload].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `X'${hex}'`;
 }

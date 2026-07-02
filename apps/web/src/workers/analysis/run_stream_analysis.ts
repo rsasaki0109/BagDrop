@@ -103,6 +103,8 @@ function applyMoonBitStats(
     ...topic,
     maxGapNs: moonbitTopic.maxGapNs,
     meanRateHz: moonbitTopic.meanRateHz ?? topic.meanRateHz,
-    status: moonbitTopic.status
+    status: moonbitTopic.status,
+    decodedPayloads: moonbitTopic.decodedPayloads,
+    decodeErrors: moonbitTopic.decodeErrors
   };
 }

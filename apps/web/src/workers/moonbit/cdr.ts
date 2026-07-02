@@ -8,8 +8,93 @@ export function isCdrLittleEndian(payload: Uint8Array): boolean {
   );
 }
 
+class CdrReader {
+  private offset = 0;
+
+  constructor(private readonly payload: Uint8Array) {}
+
+  skipEncapsulation(): boolean {
+    if (!this.canRead(4)) {
+      return false;
+    }
+
+    this.offset += 4;
+    return true;
+  }
+
+  private align(alignment: number): boolean {
+    const remainder = this.offset % alignment;
+    if (remainder !== 0) {
+      this.offset += alignment - remainder;
+    }
+
+    return this.offset <= this.payload.length;
+  }
+
+  private canRead(bytes: number): boolean {
+    return this.offset + bytes <= this.payload.length;
+  }
+
+  private readUint32(): number | null {
+    if (!this.canRead(4)) {
+      return null;
+    }
+
+    const view = new DataView(this.payload.buffer, this.payload.byteOffset + this.offset, 4);
+    this.offset += 4;
+    return view.getUint32(0, true);
+  }
+
+  skipString(): boolean {
+    if (!this.align(4)) {
+      return false;
+    }
+
+    const length = this.readUint32();
+    if (length === null || length === 0) {
+      return false;
+    }
+
+    if (!this.canRead(length)) {
+      return false;
+    }
+
+    this.offset += length;
+    const padding = (4 - (length % 4)) % 4;
+    if (!this.canRead(padding)) {
+      return false;
+    }
+
+    this.offset += padding;
+    return true;
+  }
+
+  skipDoubles(count: number): boolean {
+    if (!this.align(8)) {
+      return false;
+    }
+
+    const bytes = count * 8;
+    if (!this.canRead(bytes)) {
+      return false;
+    }
+
+    this.offset += bytes;
+    return true;
+  }
+
+  skipHeaderStamp(): boolean {
+    if (!this.canRead(8)) {
+      return false;
+    }
+
+    this.offset += 8;
+    return true;
+  }
+}
+
 export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
-  if (!isCdrLittleEndian(payload) || payload.length < 16) {
+  if (!isCdrLittleEndian(payload) || payload.length !== 16) {
     return null;
   }
 
@@ -17,15 +102,52 @@ export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
   return view.getFloat64(0, true);
 }
 
+export function validateNavMsgsOdometry(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipString() &&
+    reader.skipDoubles(7) &&
+    reader.skipDoubles(36) &&
+    reader.skipDoubles(6) &&
+    reader.skipDoubles(36)
+  );
+}
+
 export function hasCdrDecoder(topicType: string): boolean {
-  return topicType === "std_msgs/msg/Float64";
+  return topicType === "std_msgs/msg/Float64" || topicType === "nav_msgs/msg/Odometry";
 }
 
 export function validateKnownCdrPayload(topicType: string, payload: Uint8Array): boolean {
   switch (topicType) {
     case "std_msgs/msg/Float64":
       return decodeStdMsgsFloat64(payload) !== null;
+    case "nav_msgs/msg/Odometry":
+      return validateNavMsgsOdometry(payload);
     default:
       return false;
   }
+}
+
+export function buildMinimalNavMsgsOdometryPayload(): Uint8Array {
+  const payload = new Uint8Array(712);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+
+  let offset = 12;
+  for (const stringLength of [1, 1]) {
+    payload[offset] = stringLength;
+    payload[offset + 4] = 0x00;
+    offset += 8;
+  }
+
+  return payload;
 }

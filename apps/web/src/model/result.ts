@@ -52,6 +52,8 @@ export interface TopicCatalogEntry {
   meanRateHz: number | null;
   maxGapNs: number | null;
   status: "ok" | "warning" | "error" | "unknown";
+  decodedPayloads?: number | null;
+  decodeErrors?: number | null;
 }
 
 export interface BagCatalog {

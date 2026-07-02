@@ -347,16 +347,41 @@ button {
   gap: 8px;
 }
 
+.finding-summary-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 10px 0;
+}
+
+.finding-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
 .finding {
   display: grid;
-  grid-template-columns: 74px minmax(0, 1fr);
+  grid-template-columns: 110px minmax(0, 1fr);
   gap: 10px;
   padding: 10px;
   border-radius: 6px;
   background: #17201c;
 }
 
-.finding span {
+.finding-meta {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.finding-severity,
+.finding-category {
   width: fit-content;
   height: 24px;
   padding: 4px 8px;
@@ -364,6 +389,53 @@ button {
   font-size: 11px;
   font-weight: 760;
   text-transform: uppercase;
+}
+
+.finding-category {
+  color: #c8d4cf;
+  background: #24302b;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.finding-body {
+  min-width: 0;
+}
+
+.finding-topic {
+  margin-top: 8px;
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #22302a;
+  color: #d4eee2;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.finding-evidence {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 4px;
+}
+
+.finding-evidence-row {
+  display: grid;
+  grid-template-columns: minmax(0, 140px) minmax(0, 1fr);
+  gap: 8px;
+  font-size: 12px;
+}
+
+.finding-evidence-row dt {
+  margin: 0;
+  color: #8ea39a;
+}
+
+.finding-evidence-row dd {
+  margin: 0;
+  color: #d7e2dd;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-word;
 }
 
 .finding strong,
@@ -377,17 +449,20 @@ button {
   line-height: 1.45;
 }
 
-.severity-info span {
+.severity-info .finding-severity,
+.severity-info.finding-summary-pill {
   color: #dce8ff;
   background: #29436f;
 }
 
-.severity-warning span {
+.severity-warning .finding-severity,
+.severity-warning.finding-summary-pill {
   color: #ffe8bf;
   background: #6a4c17;
 }
 
-.severity-error span {
+.severity-error .finding-severity,
+.severity-error.finding-summary-pill {
   color: #ffdada;
   background: #763333;
 }

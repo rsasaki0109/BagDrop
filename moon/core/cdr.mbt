@@ -8,6 +8,16 @@ pub fn is_cdr_le(payload : Bytes) -> Bool {
 }
 
 ///|
+fn load_u32_le(payload : Bytes, offset : Int) -> UInt {
+  let mut value = 0U
+  for i = 0; i < 4; i = i + 1 {
+    let byte_value = payload.unsafe_get(offset + i).to_int().to_uint()
+    value = value | (byte_value << (i * 8))
+  }
+  value
+}
+
+///|
 fn load_u64_le(payload : Bytes, offset : Int) -> UInt64 {
   let mut value = 0UL
   for i = 0; i < 8; i = i + 1 {
@@ -18,22 +28,114 @@ fn load_u64_le(payload : Bytes, offset : Int) -> UInt64 {
 }
 
 ///|
+struct CdrReader {
+  payload : Bytes
+  mut offset : Int
+}
+
+///|
+fn CdrReader::new(payload : Bytes) -> CdrReader {
+  { payload, offset: 0 }
+}
+
+///|
+fn CdrReader::can_read(self : CdrReader, bytes : Int) -> Bool {
+  self.offset + bytes <= self.payload.length()
+}
+
+///|
+fn CdrReader::align(self : CdrReader, alignment : Int) -> Bool {
+  let remainder = self.offset % alignment
+  if remainder != 0 {
+    self.offset = self.offset + alignment - remainder
+  }
+  self.offset <= self.payload.length()
+}
+
+///|
+fn CdrReader::skip_encapsulation(self : CdrReader) -> Bool {
+  if !self.can_read(4) {
+    return false
+  }
+  self.offset = self.offset + 4
+  true
+}
+
+///|
+fn CdrReader::skip_header_stamp(self : CdrReader) -> Bool {
+  if !self.can_read(8) {
+    return false
+  }
+  self.offset = self.offset + 8
+  true
+}
+
+///|
+fn CdrReader::skip_string(self : CdrReader) -> Bool {
+  if !self.align(4) || !self.can_read(4) {
+    return false
+  }
+  let length = load_u32_le(self.payload, self.offset).to_int()
+  self.offset = self.offset + 4
+  if length <= 0 || !self.can_read(length) {
+    return false
+  }
+  self.offset = self.offset + length
+  let padding = (4 - (length % 4)) % 4
+  if !self.can_read(padding) {
+    return false
+  }
+  self.offset = self.offset + padding
+  true
+}
+
+///|
+fn CdrReader::skip_doubles(self : CdrReader, count : Int) -> Bool {
+  if !self.align(8) {
+    return false
+  }
+  let bytes = count * 8
+  if !self.can_read(bytes) {
+    return false
+  }
+  self.offset = self.offset + bytes
+  true
+}
+
+///|
 pub fn decode_std_msgs_float64(payload : Bytes) -> Double? {
-  if !is_cdr_le(payload) || payload.length() < 16 {
+  if !is_cdr_le(payload) || payload.length() != 16 {
     return None
   }
   Some(load_u64_le(payload, 8).reinterpret_as_double())
 }
 
 ///|
+pub fn validate_nav_msgs_odometry(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
+  reader.skip_header_stamp() &&
+  reader.skip_string() &&
+  reader.skip_string() &&
+  reader.skip_doubles(7) &&
+  reader.skip_doubles(36) &&
+  reader.skip_doubles(6) &&
+  reader.skip_doubles(36)
+}
+
+///|
 pub fn validate_known_cdr_payload(topic_type : String, payload : Bytes) -> Bool {
   match topic_type {
     "std_msgs/msg/Float64" => decode_std_msgs_float64(payload) is Some(_)
+    "nav_msgs/msg/Odometry" => validate_nav_msgs_odometry(payload)
     _ => false
   }
 }
 
 ///|
 pub fn has_cdr_decoder(topic_type : String) -> Bool {
-  topic_type == "std_msgs/msg/Float64"
+  topic_type == "std_msgs/msg/Float64" || topic_type == "nav_msgs/msg/Odometry"
 }

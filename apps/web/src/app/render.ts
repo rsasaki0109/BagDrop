@@ -1,5 +1,6 @@
-import type { ResultBundle, Severity, WorkerProgress } from "../model/result";
+import type { ResultBundle, TopicCatalogEntry, WorkerProgress } from "../model/result";
 import { drawInventoryChart } from "../charts/inventory_chart";
+import { renderFindingsPanel, renderFindingsSummary, summarizeFindings } from "./findings_panel";
 import { formatBytes, formatNumber } from "../ui/format";
 
 export interface AppState {
@@ -111,6 +112,7 @@ function renderEmptyDashboard(): string {
 function renderOverview(bundle: ResultBundle): string {
   const catalog = bundle.catalog;
   const inventory = catalog.inventory;
+  const findingSummary = summarizeFindings(bundle.findings);
 
   return `
     <section class="overview-grid" aria-label="Overview">
@@ -135,9 +137,9 @@ function renderOverview(bundle: ResultBundle): string {
       <div class="panel">
         <div class="panel-heading">
           <h2>Findings</h2>
-          <span>${formatNumber(bundle.findings.length)}</span>
+          <span>${renderFindingsSummary(findingSummary)}</span>
         </div>
-        ${renderFindings(bundle)}
+        ${renderFindingsPanel(bundle)}
       </div>
     </section>
 
@@ -159,27 +161,31 @@ function renderOverview(bundle: ResultBundle): string {
   `;
 }
 
-function renderFindings(bundle: ResultBundle): string {
-  if (bundle.findings.length === 0) {
-    return `<div class="quiet-message">No inventory findings.</div>`;
+function renderTopicCdrSummary(topic: TopicCatalogEntry): string {
+  if (topic.decodedPayloads === undefined || topic.decodedPayloads === null) {
+    return topic.status === "unknown" ? "—" : "N/A";
   }
 
+  const decodeErrors = topic.decodeErrors ?? 0;
+  const total = topic.decodedPayloads + decodeErrors;
+
+  if (total === 0) {
+    return "No payloads";
+  }
+
+  if (decodeErrors === 0) {
+    return `${formatNumber(topic.decodedPayloads)} ok`;
+  }
+
+  return `${formatNumber(topic.decodedPayloads)}/${formatNumber(total)} ok`;
+}
+
+function metricCard(label: string, value: string): string {
   return `
-    <ul class="finding-list">
-      ${bundle.findings
-        .map(
-          (finding) => `
-            <li class="finding ${severityClass(finding.severity)}">
-              <span>${escapeHtml(finding.severity)}</span>
-              <div>
-                <strong>${escapeHtml(finding.title)}</strong>
-                <p>${escapeHtml(finding.detail)}</p>
-              </div>
-            </li>
-          `
-        )
-        .join("")}
-    </ul>
+    <div class="metric-card">
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </div>
   `;
 }
 
@@ -232,6 +238,7 @@ function renderTopics(bundle: ResultBundle): string {
           <td class="numeric">${topic.count === null ? "N/A" : formatNumber(topic.count)}</td>
           <td class="numeric">${topic.meanRateHz === null ? "N/A" : `${formatNumber(topic.meanRateHz)} Hz`}</td>
           <td class="numeric">${topic.maxGapNs === null ? "N/A" : `${formatNumber(topic.maxGapNs / 1_000_000_000)} s`}</td>
+          <td class="numeric">${renderTopicCdrSummary(topic)}</td>
           <td>${escapeHtml(topic.status)}</td>
         </tr>
       `
@@ -248,20 +255,12 @@ function renderTopics(bundle: ResultBundle): string {
             <th class="numeric">Count</th>
             <th class="numeric">Mean Rate</th>
             <th class="numeric">Max Gap</th>
+            <th class="numeric">CDR</th>
             <th>Status</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
-    </div>
-  `;
-}
-
-function metricCard(label: string, value: string): string {
-  return `
-    <div class="metric-card">
-      <span>${escapeHtml(label)}</span>
-      <strong>${escapeHtml(value)}</strong>
     </div>
   `;
 }
@@ -301,10 +300,6 @@ function bindEvents(root: HTMLElement, actions: AppActions): void {
       input.value = "";
     }
   });
-}
-
-function severityClass(severity: Severity): string {
-  return `severity-${severity}`;
 }
 
 function escapeHtml(value: string): string {
