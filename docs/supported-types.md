@@ -5,6 +5,7 @@ BagDrop currently decodes CDR payloads for:
 - `std_msgs/msg/Float64`
 - `nav_msgs/msg/Odometry`
 - `sensor_msgs/msg/NavSatFix`
+- `sensor_msgs/msg/Imu`
 
 Other types still pass through stream analysis with timestamp statistics only. The initial generated decoder target list is:
 

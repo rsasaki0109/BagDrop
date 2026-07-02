@@ -4,6 +4,7 @@ import { drawIntervalChart } from "../charts/interval_chart";
 import { drawTrajectoryChart } from "../charts/xy_chart";
 import { drawGeopointChart } from "../charts/latlon_chart";
 import { drawValueChart } from "../charts/value_chart";
+import { computeBagHealth, renderBagHealthBadge } from "./bag_health";
 import { renderFindingsPanel, renderFindingsSummary, summarizeFindings } from "./findings_panel";
 import { formatBytes, formatNumber } from "../ui/format";
 
@@ -140,6 +141,7 @@ function renderOverview(bundle: ResultBundle, selectedTopicName: string | null, 
   const catalog = bundle.catalog;
   const inventory = catalog.inventory;
   const findingSummary = summarizeFindings(bundle.findings);
+  const bagHealth = computeBagHealth(bundle);
 
   return `
     <section class="overview-grid" aria-label="Overview">
@@ -149,7 +151,8 @@ function renderOverview(bundle: ResultBundle, selectedTopicName: string | null, 
       ${metricCard("Definitions", formatNumber(inventory.messageDefinitionFiles.length))}
       ${metricCard("Messages", catalog.messageCount === null ? "Pending" : formatNumber(catalog.messageCount))}
       ${metricCard("Topics", catalog.topics.length === 0 ? "None yet" : formatNumber(catalog.topics.length))}
-      ${metricCard("Status", catalog.storageStatus)}
+      ${renderBagHealthCard(bagHealth)}
+      ${metricCard("Storage", catalog.storageStatus)}
     </section>
 
     <section class="analysis-layout">
@@ -214,6 +217,15 @@ function metricCard(label: string, value: string): string {
     <div class="metric-card">
       <span>${escapeHtml(label)}</span>
       <strong>${escapeHtml(value)}</strong>
+    </div>
+  `;
+}
+
+function renderBagHealthCard(health: ReturnType<typeof computeBagHealth>): string {
+  return `
+    <div class="metric-card health-card health-${health.level}" title="${escapeHtml(health.detail)}">
+      <span>Bag Health</span>
+      <strong class="health-card-value">${renderBagHealthBadge(health)}</strong>
     </div>
   `;
 }

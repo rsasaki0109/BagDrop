@@ -119,6 +119,10 @@ class CdrReader {
     this.offset += 2;
     return true;
   }
+
+  consumedEntirePayload(): boolean {
+    return this.offset === this.payload.length;
+  }
 }
 
 export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
@@ -214,7 +218,31 @@ export function validateSensorMsgsNavSatFix(payload: Uint8Array): boolean {
     reader.skipUint16() &&
     reader.skipDoubles(3) &&
     reader.skipDoubles(9) &&
-    reader.skipUint8()
+    reader.skipUint8() &&
+    reader.consumedEntirePayload()
+  );
+}
+
+export function validateSensorMsgsImu(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipDoubles(4) &&
+    reader.skipDoubles(9) &&
+    reader.skipDoubles(3) &&
+    reader.skipDoubles(9) &&
+    reader.skipDoubles(3) &&
+    reader.skipDoubles(9) &&
+    reader.consumedEntirePayload()
   );
 }
 
@@ -222,7 +250,8 @@ export function hasCdrDecoder(topicType: string): boolean {
   return (
     topicType === "std_msgs/msg/Float64" ||
     topicType === "nav_msgs/msg/Odometry" ||
-    topicType === "sensor_msgs/msg/NavSatFix"
+    topicType === "sensor_msgs/msg/NavSatFix" ||
+    topicType === "sensor_msgs/msg/Imu"
   );
 }
 
@@ -234,6 +263,8 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
       return validateNavMsgsOdometry(payload);
     case "sensor_msgs/msg/NavSatFix":
       return validateSensorMsgsNavSatFix(payload);
+    case "sensor_msgs/msg/Imu":
+      return validateSensorMsgsImu(payload);
     default:
       return false;
   }
@@ -276,6 +307,30 @@ export function buildMinimalSensorMsgsNavSatFixPayload(position: { lat?: number;
   view.setFloat64(24, position.lat ?? 0, true);
   view.setFloat64(32, position.lon ?? 0, true);
   view.setFloat64(40, position.alt ?? 0, true);
+
+  return payload;
+}
+
+export function buildMinimalSensorMsgsImuPayload(motion: {
+  wx?: number;
+  wy?: number;
+  wz?: number;
+  ax?: number;
+  ay?: number;
+  az?: number;
+} = {}): Uint8Array {
+  const payload = new Uint8Array(320);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(128, motion.wx ?? 0, true);
+  view.setFloat64(136, motion.wy ?? 0, true);
+  view.setFloat64(144, motion.wz ?? 0, true);
+  view.setFloat64(224, motion.ax ?? 0, true);
+  view.setFloat64(232, motion.ay ?? 0, true);
+  view.setFloat64(240, motion.az ?? 0, true);
 
   return payload;
 }

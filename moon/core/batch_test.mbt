@@ -92,6 +92,25 @@ test "consume batch decodes sensor_msgs navsatfix payloads" {
 }
 
 ///|
+test "consume batch decodes sensor_msgs imu payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":0,\"name\":\"/imu\",\"type\":\"sensor_msgs/msg/Imu\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/imu\",\"topicType\":\"sensor_msgs/msg/Imu\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[320],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/imu") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
 test "finish writes result json and count mismatch finding" {
   let state = CoreState::new()
   ignore(state.register_topic_json(

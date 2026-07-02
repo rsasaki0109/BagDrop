@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { uint8ArrayToBase64 } from "../../platform/base64";
 import {
   buildMinimalNavMsgsOdometryPayload,
+  buildMinimalSensorMsgsImuPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
   buildMinimalStdMsgsFloat64Payload,
   decodeNavMsgsOdometryXY,
@@ -10,6 +11,7 @@ import {
   isCdrLittleEndian,
   validateKnownCdrPayload,
   validateNavMsgsOdometry,
+  validateSensorMsgsImu,
   validateSensorMsgsNavSatFix
 } from "./cdr";
 
@@ -57,5 +59,22 @@ describe("cdr", () => {
     const payload = buildMinimalSensorMsgsNavSatFixPayload({ lat: 35.6812, lon: 139.7671, alt: 12.3 });
 
     expect(decodeSensorMsgsNavSatFixLatLon(payload)).toEqual({ lat: 35.6812, lon: 139.7671 });
+  });
+
+  it("validates sensor_msgs/msg/Imu payloads", () => {
+    const payload = buildMinimalSensorMsgsImuPayload({ wx: 0.1, wy: -0.2, wz: 0.3, ax: 1, ay: 2, az: 9.8 });
+
+    expect(payload.length).toBe(320);
+    expect(validateSensorMsgsImu(payload)).toBe(true);
+    expect(validateKnownCdrPayload("sensor_msgs/msg/Imu", payload)).toBe(true);
+    expect(validateKnownCdrPayload("sensor_msgs/msg/NavSatFix", payload)).toBe(false);
+    expect(uint8ArrayToBase64(buildMinimalSensorMsgsImuPayload())).toBe(
+      "AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    );
+  });
+
+  it("rejects truncated imu payloads", () => {
+    const payload = buildMinimalSensorMsgsImuPayload().slice(0, 128);
+    expect(validateSensorMsgsImu(payload)).toBe(false);
   });
 });

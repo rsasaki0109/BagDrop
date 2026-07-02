@@ -28,6 +28,7 @@ flowchart LR
 | | |
 | --- | --- |
 | **Overview** | 7 messages · 3 topics · `ready` · **0 findings** |
+| **Bag health** | **Healthy · 100** |
 | **Backend** | MoonBit `wasm` |
 
 **Topics**
@@ -85,6 +86,7 @@ Select a topic row to open the plot panel below the Topics table. Available tabs
 | | |
 | --- | --- |
 | **Overview** | 6 messages · 3 topics · `ready` · **3 findings** |
+| **Bag health** | **Critical · 53** |
 | **Summary** | `1 error · 2 warnings` |
 
 **Topics**

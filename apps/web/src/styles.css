@@ -309,6 +309,67 @@ button {
   line-height: 1.15;
 }
 
+.health-card-value {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.health-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.health-score {
+  color: #d6ded9;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.health-card.health-healthy .health-badge,
+.health-badge.health-healthy {
+  color: #d7f7ea;
+  background: rgba(46, 196, 166, 0.14);
+  border-color: rgba(46, 196, 166, 0.35);
+}
+
+.health-card.health-degraded .health-badge,
+.health-badge.health-degraded {
+  color: #ffe8b3;
+  background: rgba(217, 164, 65, 0.14);
+  border-color: rgba(217, 164, 65, 0.35);
+}
+
+.health-card.health-critical .health-badge,
+.health-badge.health-critical {
+  color: #ffd0d0;
+  background: rgba(209, 59, 59, 0.14);
+  border-color: rgba(209, 59, 59, 0.35);
+}
+
+.health-card.health-pending .health-badge,
+.health-badge.health-pending {
+  color: #d6ded9;
+  background: rgba(143, 160, 152, 0.12);
+  border-color: rgba(143, 160, 152, 0.28);
+}
+
+.health-card.health-blocked .health-badge,
+.health-badge.health-blocked {
+  color: #ffd0d0;
+  background: rgba(209, 59, 59, 0.18);
+  border-color: rgba(209, 59, 59, 0.42);
+}
+
 .analysis-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
