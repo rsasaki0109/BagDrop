@@ -1,7 +1,7 @@
 import type { TopicMessageBatch } from "../../model/message_batch";
 import type { TopicValuePoint } from "../../model/result";
 import { base64ToUint8Array } from "../../platform/base64";
-import { decodeStdMsgsFloat32, decodeStdMsgsFloat64, decodeStdMsgsInt32, decodeStdMsgsUInt32 } from "../moonbit/cdr";
+import { decodeStdMsgsFloat32, decodeStdMsgsFloat64, decodeStdMsgsInt32, decodeStdMsgsUInt32, decodeSensorMsgsImuLinearAccelMagnitude, decodeSensorMsgsLaserScanMinRange } from "../moonbit/cdr";
 
 export type { TopicValuePoint };
 
@@ -11,7 +11,9 @@ const VALUE_TOPIC_TYPES = new Set([
   "std_msgs/msg/Float32",
   "std_msgs/msg/Float64",
   "std_msgs/msg/Int32",
-  "std_msgs/msg/UInt32"
+  "std_msgs/msg/UInt32",
+  "sensor_msgs/msg/Imu",
+  "sensor_msgs/msg/LaserScan"
 ]);
 
 function decodeScalarValue(topicType: string, payload: Uint8Array): number | null {
@@ -29,6 +31,14 @@ function decodeScalarValue(topicType: string, payload: Uint8Array): number | nul
 
   if (topicType === "std_msgs/msg/UInt32") {
     return decodeStdMsgsUInt32(payload);
+  }
+
+  if (topicType === "sensor_msgs/msg/Imu") {
+    return decodeSensorMsgsImuLinearAccelMagnitude(payload);
+  }
+
+  if (topicType === "sensor_msgs/msg/LaserScan") {
+    return decodeSensorMsgsLaserScanMinRange(payload);
   }
 
   return null;

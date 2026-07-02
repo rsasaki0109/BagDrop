@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload } from "../moonbit/cdr";
+import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload, buildMinimalSensorMsgsImuPayload, buildMinimalSensorMsgsLaserScanPayload } from "../moonbit/cdr";
 import { downsampleValueSeries, ValueSeriesRegistry } from "./value_series";
 
 describe("ValueSeriesRegistry", () => {
@@ -87,5 +87,45 @@ describe("ValueSeriesRegistry", () => {
     const result = registry.finalize();
     expect(result.get("/counter")).toEqual([{ timestampNs: 1_000_000_000, value: 12 }]);
     expect(result.get("/flags")).toEqual([{ timestampNs: 2_000_000_000, value: 99 }]);
+  });
+
+  it("extracts sensor_msgs/msg/Imu linear acceleration magnitudes", () => {
+    const registry = new ValueSeriesRegistry();
+    const payload = buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 });
+    const batch: TopicMessageBatch = {
+      topicName: "/imu",
+      topicType: "sensor_msgs/msg/Imu",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000],
+      payloadSizesBytes: [payload.length],
+      payloadsBase64: [uint8ArrayToBase64(payload)]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/imu")).toEqual([{ timestampNs: 1_000_000_000, value: 5 }]);
+  });
+
+  it("extracts sensor_msgs/msg/LaserScan minimum ranges", () => {
+    const registry = new ValueSeriesRegistry();
+    const payload = buildMinimalSensorMsgsLaserScanPayload([2.5, 1.0, 4.0]);
+    const batch: TopicMessageBatch = {
+      topicName: "/scan",
+      topicType: "sensor_msgs/msg/LaserScan",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000, 2_000_000_000],
+      payloadSizesBytes: [payload.length, payload.length],
+      payloadsBase64: [
+        uint8ArrayToBase64(payload),
+        uint8ArrayToBase64(buildMinimalSensorMsgsLaserScanPayload([3.0, 0.5]))
+      ]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/scan")).toEqual([
+      { timestampNs: 1_000_000_000, value: 1 },
+      { timestampNs: 2_000_000_000, value: 0.5 }
+    ]);
   });
 });

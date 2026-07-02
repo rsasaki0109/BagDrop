@@ -19,7 +19,7 @@ Regenerate with `pnpm --filter @bagdrop/web record:demo` (requires Playwright Ch
 
 - **Topics filter** — search by topic name or message type; the table shows a `matched / total` count.
 - **Findings panel** — grouped by category (`Stream`, `Diagnostics`, …) with severity pills, topic badges, and evidence rows. Click a topic badge to jump to that row and open its plot.
-- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
+- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types and derived Imu/LaserScan metrics; **Range** for LaserScan profiles; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
 - **CDR column** — per-topic decode success counts from MoonBit validation. See [docs/supported-types.md](docs/supported-types.md) for the full list of supported message types.
 
 ## Example Result

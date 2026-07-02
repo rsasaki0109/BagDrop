@@ -62,6 +62,13 @@ export interface TopicValuePoint {
   value: number;
 }
 
+export interface TopicScanProfile {
+  timestampNs: number;
+  angleMin: number;
+  angleIncrement: number;
+  ranges: number[];
+}
+
 export interface TopicCatalogEntry {
   id: number;
   name: string;
@@ -78,6 +85,7 @@ export interface TopicCatalogEntry {
   trajectorySeries?: TopicTrajectoryPoint[] | null;
   geopointSeries?: TopicGeopoint[] | null;
   valueSeries?: TopicValuePoint[] | null;
+  scanProfileSeries?: TopicScanProfile | null;
 }
 
 export interface BagCatalog {

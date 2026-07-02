@@ -102,6 +102,39 @@ class CdrReader {
     return view.getFloat64(0, true);
   }
 
+  readFloat32(): number | null {
+    if (!this.align(4) || !this.canRead(4)) {
+      return null;
+    }
+
+    const view = new DataView(this.payload.buffer, this.payload.byteOffset + this.offset, 4);
+    this.offset += 4;
+    return view.getFloat32(0, true);
+  }
+
+  readFloat32Sequence(): number[] | null {
+    if (!this.align(4)) {
+      return null;
+    }
+
+    const length = this.readUint32();
+    if (length === null) {
+      return null;
+    }
+
+    const values: number[] = [];
+    for (let index = 0; index < length; index += 1) {
+      const value = this.readFloat32();
+      if (value === null) {
+        return null;
+      }
+
+      values.push(value);
+    }
+
+    return values;
+  }
+
   skipHeaderStamp(): boolean {
     if (!this.canRead(8)) {
       return false;
@@ -631,6 +664,91 @@ export function validateSensorMsgsLaserScan(payload: Uint8Array): boolean {
     reader.skipFloat32Sequence() &&
     reader.consumedEntirePayload()
   );
+}
+
+export interface SensorMsgsLaserScanProfile {
+  angleMin: number;
+  angleIncrement: number;
+  ranges: number[];
+}
+
+export function decodeSensorMsgsLaserScanProfile(payload: Uint8Array): SensorMsgsLaserScanProfile | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  const angleMin = reader.readFloat32();
+  const angleMax = reader.readFloat32();
+  const angleIncrement = reader.readFloat32();
+  if (angleMin === null || angleMax === null || angleIncrement === null) {
+    return null;
+  }
+
+  if (
+    !reader.skipFloat32() ||
+    !reader.skipFloat32() ||
+    !reader.skipFloat32() ||
+    !reader.skipFloat32()
+  ) {
+    return null;
+  }
+
+  const ranges = reader.readFloat32Sequence();
+  if (ranges === null || !reader.skipFloat32Sequence() || !reader.consumedEntirePayload()) {
+    return null;
+  }
+
+  return { angleMin, angleIncrement, ranges };
+}
+
+export function decodeSensorMsgsLaserScanMinRange(payload: Uint8Array): number | null {
+  const profile = decodeSensorMsgsLaserScanProfile(payload);
+  if (!profile) {
+    return null;
+  }
+
+  let minRange = Number.POSITIVE_INFINITY;
+  for (const range of profile.ranges) {
+    if (Number.isFinite(range) && range > 0 && range < minRange) {
+      minRange = range;
+    }
+  }
+
+  return Number.isFinite(minRange) ? minRange : null;
+}
+
+export function decodeSensorMsgsImuLinearAccelMagnitude(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  if (
+    !reader.skipDoubles(4) ||
+    !reader.skipDoubles(9) ||
+    !reader.skipDoubles(3) ||
+    !reader.skipDoubles(9)
+  ) {
+    return null;
+  }
+
+  const ax = reader.readFloat64();
+  const ay = reader.readFloat64();
+  const az = reader.readFloat64();
+  if (ax === null || ay === null || az === null) {
+    return null;
+  }
+
+  return Math.hypot(ax, ay, az);
 }
 
 export function hasCdrDecoder(topicType: string): boolean {

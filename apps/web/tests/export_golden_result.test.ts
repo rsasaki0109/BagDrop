@@ -45,6 +45,7 @@ function stripPlotSeries(bundle: ResultBundle): ResultBundle {
           trajectorySeries: _trajectorySeries,
           geopointSeries: _geopointSeries,
           valueSeries: _valueSeries,
+          scanProfileSeries: _scanProfileSeries,
           ...topic
         }) => topic
       )

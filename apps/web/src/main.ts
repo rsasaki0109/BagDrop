@@ -74,6 +74,9 @@ const actions: AppActions = {
       if (selectedPlotKind === "value" && (topic?.valueSeries?.length ?? 0) === 0) {
         selectedPlotKind = "intervals";
       }
+      if (selectedPlotKind === "range" && !topic?.scanProfileSeries) {
+        selectedPlotKind = "intervals";
+      }
       if (selectedPlotKind === "xy" && (topic?.trajectorySeries?.length ?? 0) === 0) {
         selectedPlotKind = "intervals";
       }

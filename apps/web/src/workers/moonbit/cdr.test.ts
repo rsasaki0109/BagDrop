@@ -19,6 +19,9 @@ import {
   decodeGeometryMsgsPoseWithCovarianceStampedXY,
   decodeNavMsgsOdometryXY,
   decodeNavMsgsPathXY,
+  decodeSensorMsgsImuLinearAccelMagnitude,
+  decodeSensorMsgsLaserScanMinRange,
+  decodeSensorMsgsLaserScanProfile,
   decodeSensorMsgsNavSatFixLatLon,
   decodeStdMsgsFloat32,
   decodeStdMsgsFloat64,
@@ -173,6 +176,17 @@ describe("cdr", () => {
     expect(validateSensorMsgsLaserScan(payload)).toBe(true);
     expect(validateKnownCdrPayload("sensor_msgs/msg/LaserScan", payload)).toBe(true);
     expect(validateKnownCdrPayload("sensor_msgs/msg/Imu", payload)).toBe(false);
+    expect(decodeSensorMsgsLaserScanMinRange(payload)).toBe(1.5);
+    const profile = decodeSensorMsgsLaserScanProfile(payload);
+    expect(profile?.angleMin).toBe(-1);
+    expect(profile?.angleIncrement).toBeCloseTo(0.1);
+    expect(profile?.ranges).toEqual([1.5, 2.5, 3.5]);
+  });
+
+  it("decodes sensor_msgs/msg/Imu linear acceleration magnitude", () => {
+    const payload = buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 });
+
+    expect(decodeSensorMsgsImuLinearAccelMagnitude(payload)).toBe(5);
   });
 
   it("validates diagnostic_msgs/msg/DiagnosticArray payloads", () => {
