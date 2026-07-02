@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload, buildMinimalSensorMsgsImuPayload, buildMinimalSensorMsgsLaserScanPayload } from "../moonbit/cdr";
+import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload, buildMinimalGeometryMsgsTwistStampedPayload, buildMinimalSensorMsgsImuPayload, buildMinimalSensorMsgsLaserScanPayload } from "../moonbit/cdr";
 import { downsampleValueSeries, ValueSeriesRegistry } from "./value_series";
 
 describe("ValueSeriesRegistry", () => {
@@ -104,6 +104,29 @@ describe("ValueSeriesRegistry", () => {
     registry.consumeBatch(batch);
 
     expect(registry.finalize().get("/imu")).toEqual([{ timestampNs: 1_000_000_000, value: 5 }]);
+  });
+
+  it("extracts geometry_msgs/msg/TwistStamped linear x values", () => {
+    const registry = new ValueSeriesRegistry();
+    const payload = buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25 });
+    const batch: TopicMessageBatch = {
+      topicName: "/cmd_vel",
+      topicType: "geometry_msgs/msg/TwistStamped",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000, 2_000_000_000],
+      payloadSizesBytes: [payload.length, payload.length],
+      payloadsBase64: [
+        uint8ArrayToBase64(payload),
+        uint8ArrayToBase64(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.75 }))
+      ]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/cmd_vel")).toEqual([
+      { timestampNs: 1_000_000_000, value: 1.25 },
+      { timestampNs: 2_000_000_000, value: 0.75 }
+    ]);
   });
 
   it("extracts sensor_msgs/msg/LaserScan minimum ranges", () => {

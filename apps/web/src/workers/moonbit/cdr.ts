@@ -401,6 +401,19 @@ export function validateGeometryMsgsTwistStamped(payload: Uint8Array): boolean {
   return reader.skipTwistStampedFields() && reader.consumedEntirePayload();
 }
 
+export function decodeGeometryMsgsTwistStampedLinearX(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  return reader.readFloat64();
+}
+
 export function validateGeometryMsgsTwistWithCovarianceStamped(payload: Uint8Array): boolean {
   if (!isCdrLittleEndian(payload)) {
     return false;

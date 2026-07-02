@@ -41,6 +41,10 @@ async function recordCleanBagDemo(page, baseUrl) {
 
   await selectTopic(page, "/temperature");
   await selectPlotKind(page, "value");
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
+
+  await selectTopic(page, "/imu");
+  await selectPlotKind(page, "value");
   frames.push({ png: await captureAppFrame(page), durationSec: 2.0 });
 
   return frames;
@@ -58,6 +62,10 @@ async function recordFindingsDemo(page, baseUrl) {
 
   await jumpToFindingTopic(page, "/diagnostics");
   frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
+
+  await jumpToFindingTopic(page, "/scan");
+  await selectPlotKind(page, "range");
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.8 });
 
   await page.locator(".finding-list .finding").nth(2).scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);

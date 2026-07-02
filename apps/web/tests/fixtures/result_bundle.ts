@@ -5,6 +5,7 @@ import { runStreamAnalysis } from "../../src/workers/analysis/run_stream_analysi
 import {
   buildMinimalDiagnosticMsgsDiagnosticArrayPayload,
   buildMinimalNavMsgsOdometryPayload,
+  buildMinimalSensorMsgsImuPayload,
   buildMinimalSensorMsgsLaserScanPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
   buildMinimalStdMsgsFloat64Payload
@@ -113,6 +114,8 @@ async function buildResultBundleFromDb(
 async function createRosbagLikeDb(): Promise<Uint8Array> {
   const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload());
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload());
+  const imuPayloadLow = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 }));
+  const imuPayloadHigh = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 0, ay: 0, az: 9.8 }));
   const tempPayload42 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(42));
   const tempPayload43 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(43));
   const tempPayload44 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(44));
@@ -122,16 +125,19 @@ async function createRosbagLikeDb(): Promise<Uint8Array> {
       VALUES
         (1, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
         (2, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
-        (3, '/temperature', 'std_msgs/msg/Float64', 'cdr', '', 'hash-temp');
+        (3, '/imu', 'sensor_msgs/msg/Imu', 'cdr', '', 'hash-imu'),
+        (4, '/temperature', 'std_msgs/msg/Float64', 'cdr', '', 'hash-temp');
     INSERT INTO messages(id, topic_id, timestamp, data)
       VALUES
         (1, 1, 1000000000, ${odomPayload}),
         (2, 1, 2000000000, ${odomPayload}),
         (3, 2, 2500000000, ${fixPayload}),
         (4, 1, 3000000000, ${odomPayload}),
-        (5, 3, 1500000000, ${tempPayload42}),
-        (6, 3, 2200000000, ${tempPayload43}),
-        (7, 3, 2800000000, ${tempPayload44});
+        (5, 3, 1600000000, ${imuPayloadLow}),
+        (6, 3, 2400000000, ${imuPayloadHigh}),
+        (7, 4, 1500000000, ${tempPayload42}),
+        (8, 4, 2200000000, ${tempPayload43}),
+        (9, 4, 2800000000, ${tempPayload44});
   `);
 }
 

@@ -19,7 +19,7 @@ Regenerate with `pnpm --filter @bagdrop/web record:demo` (requires Playwright Ch
 
 - **Topics filter** — search by topic name or message type; the table shows a `matched / total` count.
 - **Findings panel** — grouped by category (`Stream`, `Diagnostics`, …) with severity pills, topic badges, and evidence rows. Click a topic badge to jump to that row and open its plot.
-- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types and derived Imu/LaserScan metrics; **Range** for LaserScan profiles; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
+- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types and derived Imu/TwistStamped/LaserScan metrics; **Range** for LaserScan profiles; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
 - **CDR column** — per-topic decode success counts from MoonBit validation. See [docs/supported-types.md](docs/supported-types.md) for the full list of supported message types.
 
 ## Example Result
@@ -43,7 +43,7 @@ flowchart LR
 
 | | |
 | --- | --- |
-| **Overview** | 7 messages · 3 topics · `ready` · **0 findings** |
+| **Overview** | 9 messages · 4 topics · `ready` · **0 findings** |
 | **Bag health** | **Healthy · 100** |
 | **Backend** | MoonBit `wasm` |
 
@@ -52,6 +52,7 @@ flowchart LR
 | Topic | Type | Count | Rate | Max gap | CDR | Status |
 | --- | --- | ---: | --- | --- | --- | :---: |
 | `/fix` | `sensor_msgs/msg/NavSatFix` | 1 | N/A | N/A | **1 ok** | ok |
+| `/imu` | `sensor_msgs/msg/Imu` | 2 | 1.25 Hz | 0.8 s | **2 ok** | ok |
 | `/odom` | `nav_msgs/msg/Odometry` | 3 | 1.5 Hz | 1 s | **3 ok** | ok |
 | `/temperature` | `std_msgs/msg/Float64` | 3 | 1.5 Hz | 0.7 s | **3 ok** | ok |
 
@@ -63,7 +64,7 @@ flowchart LR
 
 Both GNSS and odometry payloads decode successfully. This is the “all green” path.
 
-The GIF above shows the same flow in the live UI: drop a `.db3`, filter topics, review **Healthy** bag health, then open `/odom` and `/temperature` topic plots.
+The GIF above shows the same flow in the live UI: drop a `.db3`, filter topics, review **Healthy** bag health, then open `/odom`, `/temperature`, and `/imu` topic plots.
 
 **Topic plots**
 
@@ -73,6 +74,7 @@ Select a topic row to open the plot panel below the Topics table. Use the filter
 | --- | --- |
 | `/odom` | **Intervals** · XY trajectory |
 | `/fix` | **Intervals** · Lat/Lon |
+| `/imu` | **Intervals** · Value (`|linear acceleration|`) |
 | `/temperature` | **Intervals** · Value |
 
 ```text

@@ -57,6 +57,22 @@
       },
       {
         "id": 1,
+        "name": "/imu",
+        "type": "sensor_msgs/msg/Imu",
+        "serializationFormat": "cdr",
+        "count": 2,
+        "timeRange": {
+          "startNs": 1600000000,
+          "endNs": 2400000000
+        },
+        "meanRateHz": 2.5,
+        "maxGapNs": 800000000,
+        "status": "ok",
+        "decodedPayloads": 2,
+        "decodeErrors": 0
+      },
+      {
+        "id": 2,
         "name": "/odom",
         "type": "nav_msgs/msg/Odometry",
         "serializationFormat": "cdr",
@@ -72,7 +88,7 @@
         "decodeErrors": 0
       },
       {
-        "id": 2,
+        "id": 3,
         "name": "/temperature",
         "type": "std_msgs/msg/Float64",
         "serializationFormat": "cdr",
@@ -88,7 +104,7 @@
         "decodeErrors": 0
       }
     ],
-    "messageCount": 7,
+    "messageCount": 9,
     "timeRange": {
       "startNs": 1000000000,
       "endNs": 3000000000
@@ -106,7 +122,7 @@
     {
       "id": "message-count",
       "label": "Messages",
-      "value": 7
+      "value": 9
     },
     {
       "id": "storage-status",
@@ -121,12 +137,12 @@
     {
       "id": "stream-batches-read",
       "label": "Stream batches read",
-      "value": 3
+      "value": 4
     },
     {
       "id": "stream-verified-topics",
       "label": "Stream verified topics",
-      "value": 3
+      "value": 4
     },
     {
       "id": "moonbit-backend",
@@ -136,7 +152,7 @@
     {
       "id": "moonbit-batches-consumed",
       "label": "MoonBit batches consumed",
-      "value": 3
+      "value": 4
     }
   ],
   "findings": []

@@ -18,6 +18,7 @@ import {
   decodeGeometryMsgsPoseStampedXY,
   decodeGeometryMsgsPoseWithCovarianceStampedXY,
   decodeNavMsgsOdometryXY,
+  decodeGeometryMsgsTwistStampedLinearX,
   decodeNavMsgsPathXY,
   decodeSensorMsgsImuLinearAccelMagnitude,
   decodeSensorMsgsLaserScanMinRange,
@@ -106,6 +107,7 @@ describe("cdr", () => {
     expect(validateGeometryMsgsTwistStamped(payload)).toBe(true);
     expect(validateKnownCdrPayload("geometry_msgs/msg/TwistStamped", payload)).toBe(true);
     expect(validateKnownCdrPayload("geometry_msgs/msg/PoseStamped", payload)).toBe(false);
+    expect(decodeGeometryMsgsTwistStampedLinearX(payload)).toBe(0.5);
   });
 
   it("validates geometry_msgs/msg/TwistWithCovarianceStamped payloads", () => {

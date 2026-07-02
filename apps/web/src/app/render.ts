@@ -388,7 +388,9 @@ function renderTopicPlotPanel(
         : activePlotKind === "value"
           ? topic.type === "sensor_msgs/msg/Imu"
             ? "|Linear acceleration| (m/s²) over bag time."
-            : topic.type === "sensor_msgs/msg/LaserScan"
+            : topic.type === "geometry_msgs/msg/TwistStamped"
+              ? "Linear x velocity (m/s) over bag time."
+              : topic.type === "sensor_msgs/msg/LaserScan"
               ? "Minimum valid range per scan over bag time."
               : `Decoded ${topic.type} values over bag time.`
           : `Message interval Δt (seconds) vs bag time. Orange line marks the ${formatNumber(5)} s large-gap warning threshold.`;

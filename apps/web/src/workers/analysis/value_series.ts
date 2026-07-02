@@ -1,7 +1,7 @@
 import type { TopicMessageBatch } from "../../model/message_batch";
 import type { TopicValuePoint } from "../../model/result";
 import { base64ToUint8Array } from "../../platform/base64";
-import { decodeStdMsgsFloat32, decodeStdMsgsFloat64, decodeStdMsgsInt32, decodeStdMsgsUInt32, decodeSensorMsgsImuLinearAccelMagnitude, decodeSensorMsgsLaserScanMinRange } from "../moonbit/cdr";
+import { decodeStdMsgsFloat32, decodeStdMsgsFloat64, decodeStdMsgsInt32, decodeStdMsgsUInt32, decodeGeometryMsgsTwistStampedLinearX, decodeSensorMsgsImuLinearAccelMagnitude, decodeSensorMsgsLaserScanMinRange } from "../moonbit/cdr";
 
 export type { TopicValuePoint };
 
@@ -12,6 +12,7 @@ const VALUE_TOPIC_TYPES = new Set([
   "std_msgs/msg/Float64",
   "std_msgs/msg/Int32",
   "std_msgs/msg/UInt32",
+  "geometry_msgs/msg/TwistStamped",
   "sensor_msgs/msg/Imu",
   "sensor_msgs/msg/LaserScan"
 ]);
@@ -35,6 +36,10 @@ function decodeScalarValue(topicType: string, payload: Uint8Array): number | nul
 
   if (topicType === "sensor_msgs/msg/Imu") {
     return decodeSensorMsgsImuLinearAccelMagnitude(payload);
+  }
+
+  if (topicType === "geometry_msgs/msg/TwistStamped") {
+    return decodeGeometryMsgsTwistStampedLinearX(payload);
   }
 
   if (topicType === "sensor_msgs/msg/LaserScan") {
