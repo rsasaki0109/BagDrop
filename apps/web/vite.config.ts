@@ -6,7 +6,7 @@ const crossOriginIsolationHeaders = {
 };
 
 export default defineConfig({
-  base: "/bagdrop/",
+  base: "/BagDrop/",
   optimizeDeps: {
     exclude: ["@sqlite.org/sqlite-wasm"]
   },

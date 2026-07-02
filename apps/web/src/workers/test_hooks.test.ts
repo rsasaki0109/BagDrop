@@ -12,7 +12,7 @@ describe("readBagdropTestHooksFromUrl", () => {
   it("reads worker query flags", () => {
     expect(
       readBagdropTestHooksFromUrl(
-        "http://127.0.0.1/bagdrop/src/workers/bag.worker.ts?forceDisableDirectFileVfs=1&forceOpfsStaging=1"
+        "http://127.0.0.1/BagDrop/src/workers/bag.worker.ts?forceDisableDirectFileVfs=1&forceOpfsStaging=1"
       )
     ).toEqual({
       forceDisableDirectFileVfs: true,
@@ -43,7 +43,7 @@ describe("bagdropTestWorkerUrl", () => {
     const originalLocation = globalThis.location;
     Object.defineProperty(globalThis, "location", {
       configurable: true,
-      value: new URL("http://127.0.0.1/bagdrop/?bagdrop_test=opfs")
+      value: new URL("http://127.0.0.1/BagDrop/?bagdrop_test=opfs")
     });
 
     try {
@@ -52,7 +52,7 @@ describe("bagdropTestWorkerUrl", () => {
         forceOpfsStaging: true
       });
 
-      const workerUrl = bagdropTestWorkerUrl(new URL("http://127.0.0.1/bagdrop/src/workers/bag.worker.ts"));
+      const workerUrl = bagdropTestWorkerUrl(new URL("http://127.0.0.1/BagDrop/src/workers/bag.worker.ts"));
       expect(workerUrl.searchParams.get("forceDisableDirectFileVfs")).toBe("1");
       expect(workerUrl.searchParams.get("forceOpfsStaging")).toBe("1");
     } finally {

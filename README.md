@@ -17,7 +17,7 @@ Build the MoonBit core Wasm module (requires the [MoonBit CLI](https://www.moonb
 pnpm build:moon-core
 ```
 
-The app is served from `apps/web` and is configured for GitHub Project Pages with `base: "/bagdrop/"`.
+The app is served from `apps/web` and is configured for GitHub Project Pages with `base: "/BagDrop/"` (must match the repository name).
 
 ## Architecture Direction
 

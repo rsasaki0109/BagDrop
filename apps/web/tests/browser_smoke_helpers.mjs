@@ -26,7 +26,7 @@ export async function createSmokeViteServer() {
 }
 
 export function smokeBaseUrl(server) {
-  return new URL("bagdrop/", server.resolvedUrls?.local[0] ?? "http://127.0.0.1:5174/");
+  return new URL("BagDrop/", server.resolvedUrls?.local[0] ?? "http://127.0.0.1:5174/");
 }
 
 export async function launchSmokeBrowser() {
