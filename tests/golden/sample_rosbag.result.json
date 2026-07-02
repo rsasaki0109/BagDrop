@@ -70,9 +70,25 @@
         "status": "ok",
         "decodedPayloads": 3,
         "decodeErrors": 0
+      },
+      {
+        "id": 2,
+        "name": "/temperature",
+        "type": "std_msgs/msg/Float64",
+        "serializationFormat": "cdr",
+        "count": 3,
+        "timeRange": {
+          "startNs": 1500000000,
+          "endNs": 2800000000
+        },
+        "meanRateHz": 2.3076923076923075,
+        "maxGapNs": 700000000,
+        "status": "ok",
+        "decodedPayloads": 3,
+        "decodeErrors": 0
       }
     ],
-    "messageCount": 4,
+    "messageCount": 7,
     "timeRange": {
       "startNs": 1000000000,
       "endNs": 3000000000
@@ -90,7 +106,7 @@
     {
       "id": "message-count",
       "label": "Messages",
-      "value": 4
+      "value": 7
     },
     {
       "id": "storage-status",
@@ -105,12 +121,12 @@
     {
       "id": "stream-batches-read",
       "label": "Stream batches read",
-      "value": 2
+      "value": 3
     },
     {
       "id": "stream-verified-topics",
       "label": "Stream verified topics",
-      "value": 2
+      "value": 3
     },
     {
       "id": "moonbit-backend",
@@ -120,7 +136,7 @@
     {
       "id": "moonbit-batches-consumed",
       "label": "MoonBit batches consumed",
-      "value": 2
+      "value": 3
     }
   ],
   "findings": []

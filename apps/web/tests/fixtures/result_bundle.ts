@@ -4,7 +4,8 @@ import type { WorkerFileRef } from "../../src/model/worker_messages";
 import { runStreamAnalysis } from "../../src/workers/analysis/run_stream_analysis";
 import {
   buildMinimalNavMsgsOdometryPayload,
-  buildMinimalSensorMsgsNavSatFixPayload
+  buildMinimalSensorMsgsNavSatFixPayload,
+  buildMinimalStdMsgsFloat64Payload
 } from "../../src/workers/moonbit/cdr";
 import { scanSqliteCatalog } from "../../src/workers/sqlite/catalog";
 import { createWasmMoonBitCoreSession } from "./wasm_session";
@@ -110,18 +111,25 @@ async function buildResultBundleFromDb(
 async function createRosbagLikeDb(): Promise<Uint8Array> {
   const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload());
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload());
+  const tempPayload42 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(42));
+  const tempPayload43 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(43));
+  const tempPayload44 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(44));
 
   return createRosbagDb(`
     INSERT INTO topics(id, name, type, serialization_format, offered_qos_profiles, type_description_hash)
       VALUES
         (1, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
-        (2, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix');
+        (2, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
+        (3, '/temperature', 'std_msgs/msg/Float64', 'cdr', '', 'hash-temp');
     INSERT INTO messages(id, topic_id, timestamp, data)
       VALUES
         (1, 1, 1000000000, ${odomPayload}),
         (2, 1, 2000000000, ${odomPayload}),
         (3, 2, 2500000000, ${fixPayload}),
-        (4, 1, 3000000000, ${odomPayload});
+        (4, 1, 3000000000, ${odomPayload}),
+        (5, 3, 1500000000, ${tempPayload42}),
+        (6, 3, 2200000000, ${tempPayload43}),
+        (7, 3, 2800000000, ${tempPayload44});
   `);
 }
 

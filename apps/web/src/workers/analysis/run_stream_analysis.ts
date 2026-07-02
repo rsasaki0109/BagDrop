@@ -8,6 +8,7 @@ import type { TopicMessageBatch } from "../../model/message_batch";
 import { GeopointSeriesRegistry } from "./geopoint_series";
 import { IntervalSeriesRegistry } from "./interval_series";
 import { TrajectorySeriesRegistry } from "./trajectory_series";
+import { ValueSeriesRegistry } from "./value_series";
 
 export interface StreamAnalysisResult {
   topics: TopicCatalogEntry[];
@@ -27,6 +28,7 @@ export async function runStreamAnalysis(
   const intervalRegistry = new IntervalSeriesRegistry();
   const trajectoryRegistry = new TrajectorySeriesRegistry();
   const geopointRegistry = new GeopointSeriesRegistry();
+  const valueRegistry = new ValueSeriesRegistry();
 
   let segmentsScanned = 0;
 
@@ -45,6 +47,7 @@ export async function runStreamAnalysis(
             intervalRegistry.consumeBatch(batch);
             trajectoryRegistry.consumeBatch(batch);
             geopointRegistry.consumeBatch(batch);
+            valueRegistry.consumeBatch(batch);
           }
         });
       });
@@ -68,23 +71,26 @@ export async function runStreamAnalysis(
   const intervalSeriesByTopic = intervalRegistry.finalize();
   const trajectorySeriesByTopic = trajectoryRegistry.finalize();
   const geopointSeriesByTopic = geopointRegistry.finalize();
+  const valueSeriesByTopic = valueRegistry.finalize();
   const moonbitByTopicName = new Map(moonbitResult.topics.map((topic) => [topic.name, topic]));
   const topics = catalog.topics.map((topic) => {
     const moonbitTopic = moonbitByTopicName.get(topic.name);
     const intervalSeries = intervalSeriesByTopic.get(topic.name) ?? null;
     const trajectorySeries = trajectorySeriesByTopic.get(topic.name) ?? null;
     const geopointSeries = geopointSeriesByTopic.get(topic.name) ?? null;
+    const valueSeries = valueSeriesByTopic.get(topic.name) ?? null;
 
     if (!moonbitTopic) {
       return {
         ...topic,
         intervalSeries,
         trajectorySeries,
-        geopointSeries
+        geopointSeries,
+        valueSeries
       };
     }
 
-    return applyMoonBitStats(topic, moonbitTopic, intervalSeries, trajectorySeries, geopointSeries);
+    return applyMoonBitStats(topic, moonbitTopic, intervalSeries, trajectorySeries, geopointSeries, valueSeries);
   });
 
   return {
@@ -125,7 +131,8 @@ function applyMoonBitStats(
   moonbitTopic: MoonBitTopicResult,
   intervalSeries: TopicCatalogEntry["intervalSeries"],
   trajectorySeries: TopicCatalogEntry["trajectorySeries"],
-  geopointSeries: TopicCatalogEntry["geopointSeries"]
+  geopointSeries: TopicCatalogEntry["geopointSeries"],
+  valueSeries: TopicCatalogEntry["valueSeries"]
 ): TopicCatalogEntry {
   return {
     ...topic,
@@ -136,6 +143,7 @@ function applyMoonBitStats(
     decodeErrors: moonbitTopic.decodeErrors,
     intervalSeries,
     trajectorySeries,
-    geopointSeries
+    geopointSeries,
+    valueSeries
   };
 }

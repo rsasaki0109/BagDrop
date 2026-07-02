@@ -27,7 +27,7 @@ flowchart LR
 
 | | |
 | --- | --- |
-| **Overview** | 4 messages · 2 topics · `ready` · **0 findings** |
+| **Overview** | 7 messages · 3 topics · `ready` · **0 findings** |
 | **Backend** | MoonBit `wasm` |
 
 **Topics**
@@ -36,6 +36,7 @@ flowchart LR
 | --- | --- | ---: | --- | --- | --- | :---: |
 | `/fix` | `sensor_msgs/msg/NavSatFix` | 1 | N/A | N/A | **1 ok** | ok |
 | `/odom` | `nav_msgs/msg/Odometry` | 3 | 1.5 Hz | 1 s | **3 ok** | ok |
+| `/temperature` | `std_msgs/msg/Float64` | 3 | 1.5 Hz | 0.7 s | **3 ok** | ok |
 
 **Findings panel**
 
@@ -44,6 +45,38 @@ flowchart LR
 ```
 
 Both GNSS and odometry payloads decode successfully. This is the “all green” path.
+
+**Topic plots**
+
+Select a topic row to open the plot panel below the Topics table. Available tabs depend on message type:
+
+| Topic | Tabs |
+| --- | --- |
+| `/odom` | **Intervals** · XY trajectory |
+| `/fix` | **Intervals** · Lat/Lon |
+| `/temperature` | **Intervals** · Value |
+
+```text
+┌─ Topic Plot ─ /odom · 2 points ────────────────────────────────┐
+│ [Intervals]  Value  XY trajectory  Lat/Lon                     │
+│ Message interval Δt (seconds) vs bag time.                     │
+│                                                                │
+│     1.0s ┤              ●                                      │
+│          │         ●                                           │
+│     0.5s ┤    ●                                                │
+│          └────────────────────────────────────────── bag time  │
+└────────────────────────────────────────────────────────────────┘
+
+┌─ Topic Plot ─ /temperature · 3 points ─────────────────────────┐
+│ Intervals  [Value]  XY trajectory  Lat/Lon                     │
+│ Decoded std_msgs/msg/Float64 values over bag time.             │
+│                                                                │
+│      44 ┤                              ●                       │
+│      43 ┤                   ●                                  │
+│      42 ┤          ●                                           │
+│          └────────────────────────────────────────── bag time  │
+└────────────────────────────────────────────────────────────────┘
+```
 
 ### Bag with findings
 

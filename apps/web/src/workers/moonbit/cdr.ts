@@ -239,6 +239,14 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
   }
 }
 
+export function buildMinimalStdMsgsFloat64Payload(value = 0): Uint8Array {
+  const payload = new Uint8Array(16);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(8, value, true);
+  return payload;
+}
+
 export function buildMinimalNavMsgsOdometryPayload(position: { x?: number; y?: number; z?: number } = {}): Uint8Array {
   const payload = new Uint8Array(712);
   payload.set([0x00, 0x01, 0x00, 0x00], 0);

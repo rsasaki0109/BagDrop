@@ -69,6 +69,9 @@ const actions: AppActions = {
     let selectedPlotKind = state.selectedPlotKind;
     if (topicName && state.bundle) {
       const topic = state.bundle.catalog.topics.find((entry) => entry.name === topicName);
+      if (selectedPlotKind === "value" && (topic?.valueSeries?.length ?? 0) === 0) {
+        selectedPlotKind = "intervals";
+      }
       if (selectedPlotKind === "xy" && (topic?.trajectorySeries?.length ?? 0) === 0) {
         selectedPlotKind = "intervals";
       }

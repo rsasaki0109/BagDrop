@@ -3,6 +3,7 @@ import { uint8ArrayToBase64 } from "../../platform/base64";
 import {
   buildMinimalNavMsgsOdometryPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
+  buildMinimalStdMsgsFloat64Payload,
   decodeNavMsgsOdometryXY,
   decodeSensorMsgsNavSatFixLatLon,
   decodeStdMsgsFloat64,
@@ -14,9 +15,7 @@ import {
 
 describe("cdr", () => {
   it("decodes std_msgs/msg/Float64 payloads", () => {
-    const payload = new Uint8Array([
-      0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x45, 0x40
-    ]);
+    const payload = buildMinimalStdMsgsFloat64Payload(42);
 
     expect(isCdrLittleEndian(payload)).toBe(true);
     expect(decodeStdMsgsFloat64(payload)).toBe(42);

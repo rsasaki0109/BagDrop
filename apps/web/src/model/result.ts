@@ -57,6 +57,11 @@ export interface TopicGeopoint {
   lon: number;
 }
 
+export interface TopicValuePoint {
+  timestampNs: number;
+  value: number;
+}
+
 export interface TopicCatalogEntry {
   id: number;
   name: string;
@@ -72,6 +77,7 @@ export interface TopicCatalogEntry {
   intervalSeries?: TopicIntervalPoint[] | null;
   trajectorySeries?: TopicTrajectoryPoint[] | null;
   geopointSeries?: TopicGeopoint[] | null;
+  valueSeries?: TopicValuePoint[] | null;
 }
 
 export interface BagCatalog {

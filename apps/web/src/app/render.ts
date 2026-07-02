@@ -3,10 +3,11 @@ import { drawInventoryChart } from "../charts/inventory_chart";
 import { drawIntervalChart } from "../charts/interval_chart";
 import { drawTrajectoryChart } from "../charts/xy_chart";
 import { drawGeopointChart } from "../charts/latlon_chart";
+import { drawValueChart } from "../charts/value_chart";
 import { renderFindingsPanel, renderFindingsSummary, summarizeFindings } from "./findings_panel";
 import { formatBytes, formatNumber } from "../ui/format";
 
-export type TopicPlotKind = "intervals" | "xy" | "latlon";
+export type TopicPlotKind = "intervals" | "xy" | "latlon" | "value";
 
 export interface AppState {
   status: "idle" | "scanning" | "ready" | "error";
@@ -89,7 +90,9 @@ export function renderApp(root: HTMLElement, state: AppState, actions: AppAction
     const topic = state.bundle.catalog.topics.find((entry) => entry.name === state.selectedTopicName);
     if (topic) {
       const activePlotKind = resolveActivePlotKind(topic, state.selectedPlotKind);
-      if (activePlotKind === "latlon" && topic.geopointSeries) {
+      if (activePlotKind === "value" && topic.valueSeries) {
+        drawValueChart(plotCanvas, topic, topic.valueSeries);
+      } else if (activePlotKind === "latlon" && topic.geopointSeries) {
         drawGeopointChart(plotCanvas, topic, topic.geopointSeries);
       } else if (activePlotKind === "xy" && topic.trajectorySeries) {
         drawTrajectoryChart(plotCanvas, topic, topic.trajectorySeries);
@@ -303,7 +306,7 @@ function renderTopicPlotPanel(
           <h2>Topic Plot</h2>
           <span>Select a topic</span>
         </div>
-        <div class="quiet-message">Choose a topic row to inspect message intervals, odometry trajectories, or GNSS lat/lon tracks.</div>
+        <div class="quiet-message">Choose a topic row to inspect message intervals, scalar time series, odometry trajectories, or GNSS lat/lon tracks.</div>
       </section>
     `;
   }
@@ -316,17 +319,27 @@ function renderTopicPlotPanel(
   const intervalCount = topic.intervalSeries?.length ?? 0;
   const trajectoryCount = topic.trajectorySeries?.length ?? 0;
   const geopointCount = topic.geopointSeries?.length ?? 0;
+  const valueCount = topic.valueSeries?.length ?? 0;
   const hasTrajectory = trajectoryCount > 0;
   const hasGeopoints = geopointCount > 0;
+  const hasValues = valueCount > 0;
   const activePlotKind = resolveActivePlotKind(topic, selectedPlotKind);
   const pointCount =
-    activePlotKind === "xy" ? trajectoryCount : activePlotKind === "latlon" ? geopointCount : intervalCount;
+    activePlotKind === "xy"
+      ? trajectoryCount
+      : activePlotKind === "latlon"
+        ? geopointCount
+        : activePlotKind === "value"
+          ? valueCount
+          : intervalCount;
   const plotCopy =
     activePlotKind === "xy"
       ? "Odometry pose projected to x/y. Green marks the first pose and orange marks the last."
       : activePlotKind === "latlon"
         ? "NavSatFix latitude and longitude track. Green marks the first fix and orange marks the last."
-        : `Message interval Δt (seconds) vs bag time. Orange line marks the ${formatNumber(5)} s large-gap warning threshold.`;
+        : activePlotKind === "value"
+          ? "Decoded std_msgs/msg/Float64 values over bag time."
+          : `Message interval Δt (seconds) vs bag time. Orange line marks the ${formatNumber(5)} s large-gap warning threshold.`;
 
   return `
     <section class="panel topic-plot-panel">
@@ -343,6 +356,16 @@ function renderTopicPlotPanel(
           data-plot-kind="intervals"
         >
           Intervals
+        </button>
+        <button
+          class="topic-plot-tab ${activePlotKind === "value" ? "is-active" : ""} ${hasValues ? "" : "is-disabled"}"
+          type="button"
+          role="tab"
+          aria-selected="${activePlotKind === "value" ? "true" : "false"}"
+          data-plot-kind="value"
+          ${hasValues ? "" : "disabled"}
+        >
+          Value
         </button>
         <button
           class="topic-plot-tab ${activePlotKind === "xy" ? "is-active" : ""} ${hasTrajectory ? "" : "is-disabled"}"
@@ -372,6 +395,10 @@ function renderTopicPlotPanel(
 }
 
 function resolveActivePlotKind(topic: TopicCatalogEntry, selectedPlotKind: TopicPlotKind): TopicPlotKind {
+  if (selectedPlotKind === "value" && (topic.valueSeries?.length ?? 0) > 0) {
+    return "value";
+  }
+
   if (selectedPlotKind === "latlon" && (topic.geopointSeries?.length ?? 0) > 0) {
     return "latlon";
   }
@@ -425,7 +452,7 @@ function bindEvents(root: HTMLElement, state: AppState, actions: AppActions): vo
   for (const tab of root.querySelectorAll<HTMLButtonElement>(".topic-plot-tab:not(.is-disabled)")) {
     tab.addEventListener("click", () => {
       const plotKind = tab.dataset.plotKind;
-      if (plotKind === "intervals" || plotKind === "xy" || plotKind === "latlon") {
+      if (plotKind === "intervals" || plotKind === "xy" || plotKind === "latlon" || plotKind === "value") {
         actions.onPlotKindSelect(plotKind);
       }
     });

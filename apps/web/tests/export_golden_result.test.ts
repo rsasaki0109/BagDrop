@@ -44,6 +44,7 @@ function stripPlotSeries(bundle: ResultBundle): ResultBundle {
           intervalSeries: _intervalSeries,
           trajectorySeries: _trajectorySeries,
           geopointSeries: _geopointSeries,
+          valueSeries: _valueSeries,
           ...topic
         }) => topic
       )
