@@ -1,0 +1,127 @@
+{
+  "appVersion": "0.0.0",
+  "createdAt": "2026-07-02T10:00:00.000Z",
+  "catalog": {
+    "inventory": {
+      "files": [
+        {
+          "id": "segment-0",
+          "path": "demo_bag/segment_0.db3",
+          "name": "segment_0.db3",
+          "sizeBytes": 49152,
+          "kind": "sqlite",
+          "segmentOrdinal": 0
+        }
+      ],
+      "totalSizeBytes": 49152,
+      "metadataFiles": [],
+      "sqliteFiles": [
+        {
+          "id": "segment-0",
+          "path": "demo_bag/segment_0.db3",
+          "name": "segment_0.db3",
+          "sizeBytes": 49152,
+          "kind": "sqlite",
+          "segmentOrdinal": 0
+        }
+      ],
+      "mcapFiles": [],
+      "messageDefinitionFiles": [],
+      "walFiles": [],
+      "journalFiles": [],
+      "warnings": []
+    },
+    "schemaCapabilities": [
+      "has_embedded_definitions",
+      "has_embedded_metadata",
+      "has_qos",
+      "has_type_hash",
+      "legacy"
+    ],
+    "topics": [
+      {
+        "id": 0,
+        "name": "/fix",
+        "type": "sensor_msgs/msg/NavSatFix",
+        "serializationFormat": "cdr",
+        "count": 1,
+        "timeRange": {
+          "startNs": 2500000000,
+          "endNs": 2500000000
+        },
+        "meanRateHz": null,
+        "maxGapNs": null,
+        "status": "ok",
+        "decodedPayloads": 0,
+        "decodeErrors": 0
+      },
+      {
+        "id": 1,
+        "name": "/odom",
+        "type": "nav_msgs/msg/Odometry",
+        "serializationFormat": "cdr",
+        "count": 3,
+        "timeRange": {
+          "startNs": 1000000000,
+          "endNs": 3000000000
+        },
+        "meanRateHz": 1.5,
+        "maxGapNs": 1000000000,
+        "status": "ok",
+        "decodedPayloads": 3,
+        "decodeErrors": 0
+      }
+    ],
+    "messageCount": 4,
+    "timeRange": {
+      "startNs": 1000000000,
+      "endNs": 3000000000
+    },
+    "storageStatus": "ready",
+    "findings": []
+  },
+  "metrics": [
+    {
+      "id": "total-size",
+      "label": "Total size",
+      "value": 49152,
+      "unit": "bytes"
+    },
+    {
+      "id": "message-count",
+      "label": "Messages",
+      "value": 4
+    },
+    {
+      "id": "storage-status",
+      "label": "Storage status",
+      "value": "ready"
+    },
+    {
+      "id": "stream-segments-scanned",
+      "label": "Stream segments scanned",
+      "value": 1
+    },
+    {
+      "id": "stream-batches-read",
+      "label": "Stream batches read",
+      "value": 2
+    },
+    {
+      "id": "stream-verified-topics",
+      "label": "Stream verified topics",
+      "value": 2
+    },
+    {
+      "id": "moonbit-backend",
+      "label": "MoonBit backend",
+      "value": "wasm"
+    },
+    {
+      "id": "moonbit-batches-consumed",
+      "label": "MoonBit batches consumed",
+      "value": 2
+    }
+  ],
+  "findings": []
+}
