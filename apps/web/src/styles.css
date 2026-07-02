@@ -339,6 +339,67 @@ button {
   height: 220px;
 }
 
+.interval-chart,
+.topic-plot-canvas {
+  display: block;
+  width: 100%;
+  height: 260px;
+}
+
+.topic-plot-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 10px 0;
+}
+
+.topic-plot-tab {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid #31403a;
+  border-radius: 999px;
+  background: #17201c;
+  color: #c8d4cf;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.topic-plot-tab.is-active {
+  border-color: #3ecfad;
+  background: #22302a;
+  color: #e7f2ec;
+}
+
+.topic-plot-tab.is-disabled,
+.topic-plot-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.topic-plot-panel .topic-plot-copy {
+  padding: 0 16px 12px;
+  color: #aeb9b4;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.topic-row {
+  cursor: pointer;
+}
+
+.topic-row:hover {
+  background: #1a2420;
+}
+
+.topic-row.is-selected {
+  background: #22302a;
+  box-shadow: inset 3px 0 0 #3ecfad;
+}
+
+.topic-row:focus-visible {
+  outline: 2px solid #3ecfad;
+  outline-offset: -2px;
+}
+
 .finding-list {
   list-style: none;
   margin: 0;

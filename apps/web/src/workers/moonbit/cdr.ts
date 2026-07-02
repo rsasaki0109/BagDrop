@@ -83,6 +83,16 @@ class CdrReader {
     return true;
   }
 
+  readFloat64(): number | null {
+    if (!this.align(8) || !this.canRead(8)) {
+      return null;
+    }
+
+    const view = new DataView(this.payload.buffer, this.payload.byteOffset + this.offset, 8);
+    this.offset += 8;
+    return view.getFloat64(0, true);
+  }
+
   skipHeaderStamp(): boolean {
     if (!this.canRead(8)) {
       return false;
@@ -120,6 +130,29 @@ export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
   return view.getFloat64(0, true);
 }
 
+export function decodeNavMsgsOdometryXY(payload: Uint8Array): { x: number; y: number } | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return null;
+  }
+
+  if (!reader.skipHeaderStamp() || !reader.skipString() || !reader.skipString()) {
+    return null;
+  }
+
+  const x = reader.readFloat64();
+  const y = reader.readFloat64();
+  if (x === null || y === null) {
+    return null;
+  }
+
+  return { x, y };
+}
+
 export function validateNavMsgsOdometry(payload: Uint8Array): boolean {
   if (!isCdrLittleEndian(payload)) {
     return false;
@@ -139,6 +172,29 @@ export function validateNavMsgsOdometry(payload: Uint8Array): boolean {
     reader.skipDoubles(6) &&
     reader.skipDoubles(36)
   );
+}
+
+export function decodeSensorMsgsNavSatFixLatLon(payload: Uint8Array): { lat: number; lon: number } | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return null;
+  }
+
+  if (!reader.skipHeaderStamp() || !reader.skipString() || !reader.skipUint8() || !reader.skipUint16()) {
+    return null;
+  }
+
+  const lat = reader.readFloat64();
+  const lon = reader.readFloat64();
+  if (lat === null || lon === null) {
+    return null;
+  }
+
+  return { lat, lon };
 }
 
 export function validateSensorMsgsNavSatFix(payload: Uint8Array): boolean {
@@ -183,7 +239,7 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
   }
 }
 
-export function buildMinimalNavMsgsOdometryPayload(): Uint8Array {
+export function buildMinimalNavMsgsOdometryPayload(position: { x?: number; y?: number; z?: number } = {}): Uint8Array {
   const payload = new Uint8Array(712);
   payload.set([0x00, 0x01, 0x00, 0x00], 0);
 
@@ -194,13 +250,24 @@ export function buildMinimalNavMsgsOdometryPayload(): Uint8Array {
     offset += 8;
   }
 
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(32, position.x ?? 0, true);
+  view.setFloat64(40, position.y ?? 0, true);
+  view.setFloat64(48, position.z ?? 0, true);
+
   return payload;
 }
 
-export function buildMinimalSensorMsgsNavSatFixPayload(): Uint8Array {
+export function buildMinimalSensorMsgsNavSatFixPayload(position: { lat?: number; lon?: number; alt?: number } = {}): Uint8Array {
   const payload = new Uint8Array(121);
   payload.set([0x00, 0x01, 0x00, 0x00], 0);
   payload[12] = 0x01;
   payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(24, position.lat ?? 0, true);
+  view.setFloat64(32, position.lon ?? 0, true);
+  view.setFloat64(40, position.alt ?? 0, true);
+
   return payload;
 }

@@ -42,6 +42,21 @@ export interface BagInventory {
   warnings: InventoryWarning[];
 }
 
+export interface TopicIntervalPoint {
+  timestampNs: number;
+  deltaNs: number;
+}
+
+export interface TopicTrajectoryPoint {
+  x: number;
+  y: number;
+}
+
+export interface TopicGeopoint {
+  lat: number;
+  lon: number;
+}
+
 export interface TopicCatalogEntry {
   id: number;
   name: string;
@@ -54,6 +69,9 @@ export interface TopicCatalogEntry {
   status: "ok" | "warning" | "error" | "unknown";
   decodedPayloads?: number | null;
   decodeErrors?: number | null;
+  intervalSeries?: TopicIntervalPoint[] | null;
+  trajectorySeries?: TopicTrajectoryPoint[] | null;
+  geopointSeries?: TopicGeopoint[] | null;
 }
 
 export interface BagCatalog {

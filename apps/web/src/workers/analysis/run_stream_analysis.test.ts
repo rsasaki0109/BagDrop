@@ -92,7 +92,16 @@ describe("runStreamAnalysis", () => {
         maxGapNs: 1_000_000_000,
         meanRateHz: 1.5,
         decodedPayloads: 3,
-        decodeErrors: 0
+        decodeErrors: 0,
+        intervalSeries: [
+          { timestampNs: 2_000_000_000, deltaNs: 1_000_000_000 },
+          { timestampNs: 3_000_000_000, deltaNs: 1_000_000_000 }
+        ],
+        trajectorySeries: [
+          { x: 0, y: 0 },
+          { x: 0, y: 0 },
+          { x: 0, y: 0 }
+        ]
       })
     );
     expect(analysis.findings).toEqual([]);

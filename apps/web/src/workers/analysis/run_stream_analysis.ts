@@ -4,6 +4,10 @@ import { createMoonBitCoreSession } from "../moonbit/load_core";
 import type { MoonBitTopicResult } from "../moonbit/types";
 import { SqliteSegmentDeferredError, withReadonlySegmentDatabase } from "../sqlite/db_session";
 import { scanSegmentTopicStreams } from "../sqlite/stream_scan";
+import type { TopicMessageBatch } from "../../model/message_batch";
+import { GeopointSeriesRegistry } from "./geopoint_series";
+import { IntervalSeriesRegistry } from "./interval_series";
+import { TrajectorySeriesRegistry } from "./trajectory_series";
 
 export interface StreamAnalysisResult {
   topics: TopicCatalogEntry[];
@@ -20,6 +24,9 @@ export async function runStreamAnalysis(
   const findings: Finding[] = [];
   const session = await sessionFactory();
   session.registerTopics(catalog.topics);
+  const intervalRegistry = new IntervalSeriesRegistry();
+  const trajectoryRegistry = new TrajectorySeriesRegistry();
+  const geopointRegistry = new GeopointSeriesRegistry();
 
   let segmentsScanned = 0;
 
@@ -30,9 +37,15 @@ export async function runStreamAnalysis(
     }
 
     try {
+      intervalRegistry.beginSegment();
       await withReadonlySegmentDatabase(file, sqliteFile, (db) => {
         scanSegmentTopicStreams(db, catalog.topics, {
-          onBatch: (batch) => session.consumeBatch(batch)
+          onBatch: (batch) => {
+            session.consumeBatch(batch);
+            intervalRegistry.consumeBatch(batch);
+            trajectoryRegistry.consumeBatch(batch);
+            geopointRegistry.consumeBatch(batch);
+          }
         });
       });
       segmentsScanned += 1;
@@ -52,14 +65,26 @@ export async function runStreamAnalysis(
   }
 
   const moonbitResult = session.finish();
+  const intervalSeriesByTopic = intervalRegistry.finalize();
+  const trajectorySeriesByTopic = trajectoryRegistry.finalize();
+  const geopointSeriesByTopic = geopointRegistry.finalize();
   const moonbitByTopicName = new Map(moonbitResult.topics.map((topic) => [topic.name, topic]));
   const topics = catalog.topics.map((topic) => {
     const moonbitTopic = moonbitByTopicName.get(topic.name);
+    const intervalSeries = intervalSeriesByTopic.get(topic.name) ?? null;
+    const trajectorySeries = trajectorySeriesByTopic.get(topic.name) ?? null;
+    const geopointSeries = geopointSeriesByTopic.get(topic.name) ?? null;
+
     if (!moonbitTopic) {
-      return topic;
+      return {
+        ...topic,
+        intervalSeries,
+        trajectorySeries,
+        geopointSeries
+      };
     }
 
-    return applyMoonBitStats(topic, moonbitTopic);
+    return applyMoonBitStats(topic, moonbitTopic, intervalSeries, trajectorySeries, geopointSeries);
   });
 
   return {
@@ -97,7 +122,10 @@ export async function runStreamAnalysis(
 
 function applyMoonBitStats(
   topic: TopicCatalogEntry,
-  moonbitTopic: MoonBitTopicResult
+  moonbitTopic: MoonBitTopicResult,
+  intervalSeries: TopicCatalogEntry["intervalSeries"],
+  trajectorySeries: TopicCatalogEntry["trajectorySeries"],
+  geopointSeries: TopicCatalogEntry["geopointSeries"]
 ): TopicCatalogEntry {
   return {
     ...topic,
@@ -105,6 +133,9 @@ function applyMoonBitStats(
     meanRateHz: moonbitTopic.meanRateHz ?? topic.meanRateHz,
     status: moonbitTopic.status,
     decodedPayloads: moonbitTopic.decodedPayloads,
-    decodeErrors: moonbitTopic.decodeErrors
+    decodeErrors: moonbitTopic.decodeErrors,
+    intervalSeries,
+    trajectorySeries,
+    geopointSeries
   };
 }

@@ -1,12 +1,19 @@
 import type { ResultBundle, TopicCatalogEntry, WorkerProgress } from "../model/result";
 import { drawInventoryChart } from "../charts/inventory_chart";
+import { drawIntervalChart } from "../charts/interval_chart";
+import { drawTrajectoryChart } from "../charts/xy_chart";
+import { drawGeopointChart } from "../charts/latlon_chart";
 import { renderFindingsPanel, renderFindingsSummary, summarizeFindings } from "./findings_panel";
 import { formatBytes, formatNumber } from "../ui/format";
+
+export type TopicPlotKind = "intervals" | "xy" | "latlon";
 
 export interface AppState {
   status: "idle" | "scanning" | "ready" | "error";
   progress: WorkerProgress | null;
   bundle: ResultBundle | null;
+  selectedTopicName: string | null;
+  selectedPlotKind: TopicPlotKind;
   error: string | null;
 }
 
@@ -18,6 +25,8 @@ export interface AppActions {
   onCancel(): void;
   onClear(): void;
   onExportJson(): void;
+  onTopicSelect(topicName: string | null): void;
+  onPlotKindSelect(plotKind: TopicPlotKind): void;
 }
 
 export function renderApp(root: HTMLElement, state: AppState, actions: AppActions): void {
@@ -63,16 +72,31 @@ export function renderApp(root: HTMLElement, state: AppState, actions: AppAction
 
         <section class="dashboard">
           ${renderStatus(state)}
-          ${state.bundle ? renderOverview(state.bundle) : renderEmptyDashboard()}
+          ${state.bundle ? renderOverview(state.bundle, state.selectedTopicName, state.selectedPlotKind) : renderEmptyDashboard()}
         </section>
       </section>
     </main>
   `;
 
-  bindEvents(root, actions);
+  bindEvents(root, state, actions);
   const canvas = root.querySelector<HTMLCanvasElement>("#inventory-chart");
   if (canvas && state.bundle) {
     drawInventoryChart(canvas, state.bundle.catalog.inventory);
+  }
+
+  const plotCanvas = root.querySelector<HTMLCanvasElement>("#topic-plot-canvas");
+  if (plotCanvas && state.bundle && state.selectedTopicName) {
+    const topic = state.bundle.catalog.topics.find((entry) => entry.name === state.selectedTopicName);
+    if (topic) {
+      const activePlotKind = resolveActivePlotKind(topic, state.selectedPlotKind);
+      if (activePlotKind === "latlon" && topic.geopointSeries) {
+        drawGeopointChart(plotCanvas, topic, topic.geopointSeries);
+      } else if (activePlotKind === "xy" && topic.trajectorySeries) {
+        drawTrajectoryChart(plotCanvas, topic, topic.trajectorySeries);
+      } else if (topic.intervalSeries) {
+        drawIntervalChart(plotCanvas, topic, topic.intervalSeries);
+      }
+    }
   }
 }
 
@@ -109,7 +133,7 @@ function renderEmptyDashboard(): string {
   `;
 }
 
-function renderOverview(bundle: ResultBundle): string {
+function renderOverview(bundle: ResultBundle, selectedTopicName: string | null, selectedPlotKind: TopicPlotKind): string {
   const catalog = bundle.catalog;
   const inventory = catalog.inventory;
   const findingSummary = summarizeFindings(bundle.findings);
@@ -156,8 +180,10 @@ function renderOverview(bundle: ResultBundle): string {
         <h2>Topics</h2>
         <span>${catalog.storageStatus === "sqlite_pending" ? "Partial catalog" : catalog.storageStatus}</span>
       </div>
-      ${renderTopics(bundle)}
+      ${renderTopics(bundle, selectedTopicName)}
     </section>
+
+    ${renderTopicPlotPanel(bundle, selectedTopicName, selectedPlotKind)}
   `;
 }
 
@@ -220,7 +246,7 @@ function renderFilesTable(bundle: ResultBundle): string {
   `;
 }
 
-function renderTopics(bundle: ResultBundle): string {
+function renderTopics(bundle: ResultBundle, selectedTopicName: string | null): string {
   if (bundle.catalog.topics.length === 0) {
     return `
       <div class="quiet-message">
@@ -232,7 +258,7 @@ function renderTopics(bundle: ResultBundle): string {
   const rows = bundle.catalog.topics
     .map(
       (topic) => `
-        <tr>
+        <tr class="topic-row ${selectedTopicName === topic.name ? "is-selected" : ""}" data-topic-name="${escapeHtml(topic.name)}" tabindex="0" role="button" aria-pressed="${selectedTopicName === topic.name ? "true" : "false"}">
           <td>${escapeHtml(topic.name)}</td>
           <td>${escapeHtml(topic.type)}</td>
           <td class="numeric">${topic.count === null ? "N/A" : formatNumber(topic.count)}</td>
@@ -265,7 +291,99 @@ function renderTopics(bundle: ResultBundle): string {
   `;
 }
 
-function bindEvents(root: HTMLElement, actions: AppActions): void {
+function renderTopicPlotPanel(
+  bundle: ResultBundle,
+  selectedTopicName: string | null,
+  selectedPlotKind: TopicPlotKind
+): string {
+  if (!selectedTopicName) {
+    return `
+      <section class="panel topic-plot-panel">
+        <div class="panel-heading">
+          <h2>Topic Plot</h2>
+          <span>Select a topic</span>
+        </div>
+        <div class="quiet-message">Choose a topic row to inspect message intervals, odometry trajectories, or GNSS lat/lon tracks.</div>
+      </section>
+    `;
+  }
+
+  const topic = bundle.catalog.topics.find((entry) => entry.name === selectedTopicName);
+  if (!topic) {
+    return "";
+  }
+
+  const intervalCount = topic.intervalSeries?.length ?? 0;
+  const trajectoryCount = topic.trajectorySeries?.length ?? 0;
+  const geopointCount = topic.geopointSeries?.length ?? 0;
+  const hasTrajectory = trajectoryCount > 0;
+  const hasGeopoints = geopointCount > 0;
+  const activePlotKind = resolveActivePlotKind(topic, selectedPlotKind);
+  const pointCount =
+    activePlotKind === "xy" ? trajectoryCount : activePlotKind === "latlon" ? geopointCount : intervalCount;
+  const plotCopy =
+    activePlotKind === "xy"
+      ? "Odometry pose projected to x/y. Green marks the first pose and orange marks the last."
+      : activePlotKind === "latlon"
+        ? "NavSatFix latitude and longitude track. Green marks the first fix and orange marks the last."
+        : `Message interval Δt (seconds) vs bag time. Orange line marks the ${formatNumber(5)} s large-gap warning threshold.`;
+
+  return `
+    <section class="panel topic-plot-panel">
+      <div class="panel-heading">
+        <h2>Topic Plot</h2>
+        <span>${escapeHtml(topic.name)} · ${formatNumber(pointCount)} points</span>
+      </div>
+      <div class="topic-plot-tabs" role="tablist" aria-label="Topic plot type">
+        <button
+          class="topic-plot-tab ${activePlotKind === "intervals" ? "is-active" : ""}"
+          type="button"
+          role="tab"
+          aria-selected="${activePlotKind === "intervals" ? "true" : "false"}"
+          data-plot-kind="intervals"
+        >
+          Intervals
+        </button>
+        <button
+          class="topic-plot-tab ${activePlotKind === "xy" ? "is-active" : ""} ${hasTrajectory ? "" : "is-disabled"}"
+          type="button"
+          role="tab"
+          aria-selected="${activePlotKind === "xy" ? "true" : "false"}"
+          data-plot-kind="xy"
+          ${hasTrajectory ? "" : "disabled"}
+        >
+          XY trajectory
+        </button>
+        <button
+          class="topic-plot-tab ${activePlotKind === "latlon" ? "is-active" : ""} ${hasGeopoints ? "" : "is-disabled"}"
+          type="button"
+          role="tab"
+          aria-selected="${activePlotKind === "latlon" ? "true" : "false"}"
+          data-plot-kind="latlon"
+          ${hasGeopoints ? "" : "disabled"}
+        >
+          Lat/Lon
+        </button>
+      </div>
+      <div class="topic-plot-copy">${plotCopy}</div>
+      <canvas id="topic-plot-canvas" class="topic-plot-canvas" width="980" height="260" aria-label="Topic plot for ${escapeHtml(topic.name)}"></canvas>
+    </section>
+  `;
+}
+
+function resolveActivePlotKind(topic: TopicCatalogEntry, selectedPlotKind: TopicPlotKind): TopicPlotKind {
+  if (selectedPlotKind === "latlon" && (topic.geopointSeries?.length ?? 0) > 0) {
+    return "latlon";
+  }
+
+  if (selectedPlotKind === "xy" && (topic.trajectorySeries?.length ?? 0) > 0) {
+    return "xy";
+  }
+
+  return "intervals";
+}
+
+function bindEvents(root: HTMLElement, state: AppState, actions: AppActions): void {
   const dropZone = root.querySelector<HTMLElement>("#drop-zone");
   dropZone?.addEventListener("dragover", (event) => {
     event.preventDefault();
@@ -284,6 +402,34 @@ function bindEvents(root: HTMLElement, actions: AppActions): void {
   root.querySelector("#cancel")?.addEventListener("click", actions.onCancel);
   root.querySelector("#clear")?.addEventListener("click", actions.onClear);
   root.querySelector("#export-json")?.addEventListener("click", actions.onExportJson);
+
+  for (const row of root.querySelectorAll<HTMLElement>(".topic-row")) {
+    const topicName = row.dataset.topicName;
+    if (!topicName) {
+      continue;
+    }
+
+    const selectTopic = () => {
+      actions.onTopicSelect(state.selectedTopicName === topicName ? null : topicName);
+    };
+
+    row.addEventListener("click", selectTopic);
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectTopic();
+      }
+    });
+  }
+
+  for (const tab of root.querySelectorAll<HTMLButtonElement>(".topic-plot-tab:not(.is-disabled)")) {
+    tab.addEventListener("click", () => {
+      const plotKind = tab.dataset.plotKind;
+      if (plotKind === "intervals" || plotKind === "xy" || plotKind === "latlon") {
+        actions.onPlotKindSelect(plotKind);
+      }
+    });
+  }
 
   root.querySelector<HTMLInputElement>("#file-input")?.addEventListener("change", (event) => {
     const input = event.currentTarget as HTMLInputElement;

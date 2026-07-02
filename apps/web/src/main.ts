@@ -1,5 +1,5 @@
 import "./styles.css";
-import { renderApp, type AppActions, type AppState } from "./app/render";
+import { renderApp, type AppActions, type AppState, type TopicPlotKind } from "./app/render";
 import { collectDroppedFiles, filesFromFileList } from "./platform/drop";
 import { BagWorkerClient } from "./workers/worker_client";
 import { downloadResultBundle } from "./report/export";
@@ -18,6 +18,8 @@ let state: AppState = {
   status: "idle",
   progress: null,
   bundle: null,
+  selectedTopicName: null,
+  selectedPlotKind: "intervals",
   error: null
 };
 
@@ -53,6 +55,8 @@ const actions: AppActions = {
       status: "idle",
       progress: null,
       bundle: null,
+      selectedTopicName: null,
+      selectedPlotKind: "intervals",
       error: null
     });
   },
@@ -60,6 +64,30 @@ const actions: AppActions = {
     if (state.bundle) {
       downloadResultBundle(state.bundle);
     }
+  },
+  onTopicSelect: (topicName) => {
+    let selectedPlotKind = state.selectedPlotKind;
+    if (topicName && state.bundle) {
+      const topic = state.bundle.catalog.topics.find((entry) => entry.name === topicName);
+      if (selectedPlotKind === "xy" && (topic?.trajectorySeries?.length ?? 0) === 0) {
+        selectedPlotKind = "intervals";
+      }
+      if (selectedPlotKind === "latlon" && (topic?.geopointSeries?.length ?? 0) === 0) {
+        selectedPlotKind = "intervals";
+      }
+    }
+
+    setState({
+      ...state,
+      selectedTopicName: topicName,
+      selectedPlotKind
+    });
+  },
+  onPlotKindSelect: (plotKind: TopicPlotKind) => {
+    setState({
+      ...state,
+      selectedPlotKind: plotKind
+    });
   }
 };
 
@@ -95,6 +123,8 @@ async function scanFiles(files: Parameters<BagWorkerClient["scan"]>[0]): Promise
       status: "ready",
       progress: null,
       bundle,
+      selectedTopicName: null,
+      selectedPlotKind: "intervals",
       error: null
     });
   } catch (error) {
