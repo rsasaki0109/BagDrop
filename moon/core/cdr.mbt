@@ -127,6 +127,33 @@ fn CdrReader::skip_u16(self : CdrReader) -> Bool {
 }
 
 ///|
+fn CdrReader::skip_float32(self : CdrReader) -> Bool {
+  if !self.align(4) || !self.can_read(4) {
+    return false
+  }
+  self.offset = self.offset + 4
+  true
+}
+
+///|
+fn CdrReader::skip_float32_sequence(self : CdrReader) -> Bool {
+  if !self.align(4) || !self.can_read(4) {
+    return false
+  }
+  let count = load_u32_le(self.payload, self.offset).to_int()
+  self.offset = self.offset + 4
+  if count < 0 {
+    return false
+  }
+  let bytes = count * 4
+  if !self.can_read(bytes) {
+    return false
+  }
+  self.offset = self.offset + bytes
+  true
+}
+
+///|
 fn CdrReader::consumed_entire_payload(self : CdrReader) -> Bool {
   self.offset == self.payload.length()
 }
@@ -359,6 +386,27 @@ pub fn validate_sensor_msgs_imu(payload : Bytes) -> Bool {
 }
 
 ///|
+pub fn validate_sensor_msgs_laser_scan(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
+  reader.skip_header_stamp() &&
+  reader.skip_string() &&
+  reader.skip_float32() &&
+  reader.skip_float32() &&
+  reader.skip_float32() &&
+  reader.skip_float32() &&
+  reader.skip_float32() &&
+  reader.skip_float32() &&
+  reader.skip_float32() &&
+  reader.skip_float32_sequence() &&
+  reader.skip_float32_sequence() &&
+  reader.consumed_entire_payload()
+}
+
+///|
 pub fn validate_known_cdr_payload(topic_type : String, payload : Bytes) -> Bool {
   match topic_type {
     "std_msgs/msg/Float32" => decode_std_msgs_float32(payload) is Some(_)
@@ -374,6 +422,7 @@ pub fn validate_known_cdr_payload(topic_type : String, payload : Bytes) -> Bool 
     "nav_msgs/msg/Path" => validate_nav_msgs_path(payload)
     "sensor_msgs/msg/NavSatFix" => validate_sensor_msgs_nav_sat_fix(payload)
     "sensor_msgs/msg/Imu" => validate_sensor_msgs_imu(payload)
+    "sensor_msgs/msg/LaserScan" => validate_sensor_msgs_laser_scan(payload)
     _ => false
   }
 }
@@ -392,5 +441,6 @@ pub fn has_cdr_decoder(topic_type : String) -> Bool {
   topic_type == "nav_msgs/msg/Odometry" ||
   topic_type == "nav_msgs/msg/Path" ||
   topic_type == "sensor_msgs/msg/NavSatFix" ||
-  topic_type == "sensor_msgs/msg/Imu"
+  topic_type == "sensor_msgs/msg/Imu" ||
+  topic_type == "sensor_msgs/msg/LaserScan"
 }

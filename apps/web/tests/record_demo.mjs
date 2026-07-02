@@ -56,7 +56,10 @@ async function recordFindingsDemo(page, baseUrl) {
   await waitForFindingsDemoReady(page);
   frames.push({ png: await captureAppFrame(page), durationSec: 2.2 });
 
-  await page.locator(".finding-list .finding").nth(1).scrollIntoViewIfNeeded();
+  await jumpToFindingTopic(page, "/diagnostics");
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
+
+  await page.locator(".finding-list .finding").nth(2).scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);
   frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
 

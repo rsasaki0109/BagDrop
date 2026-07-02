@@ -15,6 +15,7 @@ BagDrop currently decodes CDR payloads for:
 - `nav_msgs/msg/Path`
 - `sensor_msgs/msg/NavSatFix`
 - `sensor_msgs/msg/Imu`
+- `sensor_msgs/msg/LaserScan`
 
 Diagnostic arrays also feed topic-level diagnostic findings during stream analysis.
 

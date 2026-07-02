@@ -103,21 +103,29 @@ Select a topic row to open the plot panel below the Topics table. Use the filter
 
 | | |
 | --- | --- |
-| **Overview** | 6 messages · 3 topics · `ready` · **3 findings** |
-| **Bag health** | **Critical · 53** |
-| **Summary** | `1 error · 2 warnings` |
+| **Overview** | 7 messages · 4 topics · `ready` · **4 findings** |
+| **Bag health** | **Critical · 6** |
+| **Summary** | `2 errors · 2 warnings` |
 
 **Topics**
 
 | Topic | Type | CDR | Status | Why |
 | --- | --- | --- | :---: | --- |
+| `/diagnostics` | `DiagnosticArray` | 1 ok | ok | ERROR status in payload → Diagnostics finding |
 | `/fix` | `NavSatFix` | 1/2 ok | error | catalog says 5 msgs, stream found 2; 1 bad payload |
 | `/odom` | `Odometry` | 2 ok | ok | baseline healthy topic |
-| `/scan` | `LaserScan` | N/A | warning | 6 s gap between messages |
+| `/scan` | `LaserScan` | 2 ok | warning | 6 s gap between messages |
 
 **Findings panel (as shown in the UI)**
 
 ```text
+┌─ ERROR ─ Diagnostics ────────────────────────────────────────┐
+│ Diagnostic errors reported                                   │
+│ Topic /diagnostics decoded 1 ERROR-level diagnostic status   │
+│ (e.g. cpu).                                                  │
+│ /diagnostics · errors=1 · warnings=0 · stale=0 · ok=0        │
+└──────────────────────────────────────────────────────────────┘
+
 ┌─ ERROR ─ Stream ─────────────────────────────────────────────┐
 │ Stream count mismatch                                        │
 │ Topic /fix streamed 2 messages, but catalog reported 5.      │

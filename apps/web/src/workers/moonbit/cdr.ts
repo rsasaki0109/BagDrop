@@ -204,6 +204,34 @@ class CdrReader {
     this.offset += 1;
     return value;
   }
+
+  skipFloat32(): boolean {
+    if (!this.align(4) || !this.canRead(4)) {
+      return false;
+    }
+
+    this.offset += 4;
+    return true;
+  }
+
+  skipFloat32Sequence(): boolean {
+    if (!this.align(4) || !this.canRead(4)) {
+      return false;
+    }
+
+    const length = this.readUint32();
+    if (length === null) {
+      return false;
+    }
+
+    const bytes = length * 4;
+    if (!this.canRead(bytes)) {
+      return false;
+    }
+
+    this.offset += bytes;
+    return true;
+  }
 }
 
 export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
@@ -579,6 +607,32 @@ export function validateSensorMsgsImu(payload: Uint8Array): boolean {
   );
 }
 
+export function validateSensorMsgsLaserScan(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32() &&
+    reader.skipFloat32Sequence() &&
+    reader.skipFloat32Sequence() &&
+    reader.consumedEntirePayload()
+  );
+}
+
 export function hasCdrDecoder(topicType: string): boolean {
   return (
     topicType === "std_msgs/msg/Float32" ||
@@ -593,7 +647,8 @@ export function hasCdrDecoder(topicType: string): boolean {
     topicType === "nav_msgs/msg/Odometry" ||
     topicType === "nav_msgs/msg/Path" ||
     topicType === "sensor_msgs/msg/NavSatFix" ||
-    topicType === "sensor_msgs/msg/Imu"
+    topicType === "sensor_msgs/msg/Imu" ||
+    topicType === "sensor_msgs/msg/LaserScan"
   );
 }
 
@@ -625,6 +680,8 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
       return validateSensorMsgsNavSatFix(payload);
     case "sensor_msgs/msg/Imu":
       return validateSensorMsgsImu(payload);
+    case "sensor_msgs/msg/LaserScan":
+      return validateSensorMsgsLaserScan(payload);
     default:
       return false;
   }
@@ -821,6 +878,42 @@ export function buildMinimalNavMsgsPathPayload(
     view.setFloat64(poseOffset + 16, point.z ?? 0, true);
     offset = poseOffset + 56;
   }
+
+  return payload.slice(0, offset);
+}
+
+function writeCdrFloat32Sequence(payload: Uint8Array, offset: number, values: readonly number[]): number {
+  let next = writeCdrSequenceHeader(payload, offset, values.length);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+
+  for (const value of values) {
+    view.setFloat32(next, value, true);
+    next += 4;
+  }
+
+  return next;
+}
+
+export function buildMinimalSensorMsgsLaserScanPayload(
+  ranges: readonly number[] = [1.0, 2.0],
+  intensities: readonly number[] = []
+): Uint8Array {
+  const payload = new Uint8Array(128);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat32(20, -1.0, true);
+  view.setFloat32(24, 1.0, true);
+  view.setFloat32(28, 0.1, true);
+  view.setFloat32(32, 0.0, true);
+  view.setFloat32(36, 0.1, true);
+  view.setFloat32(40, 0.05, true);
+  view.setFloat32(44, 30.0, true);
+
+  let offset = writeCdrFloat32Sequence(payload, 48, ranges);
+  offset = writeCdrFloat32Sequence(payload, offset, intensities);
 
   return payload.slice(0, offset);
 }

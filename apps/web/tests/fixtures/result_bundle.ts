@@ -3,7 +3,9 @@ import type { BagCatalog, BagFileSummary, ResultBundle } from "../../src/model/r
 import type { WorkerFileRef } from "../../src/model/worker_messages";
 import { runStreamAnalysis } from "../../src/workers/analysis/run_stream_analysis";
 import {
+  buildMinimalDiagnosticMsgsDiagnosticArrayPayload,
   buildMinimalNavMsgsOdometryPayload,
+  buildMinimalSensorMsgsLaserScanPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
   buildMinimalStdMsgsFloat64Payload
 } from "../../src/workers/moonbit/cdr";
@@ -136,21 +138,25 @@ async function createRosbagLikeDb(): Promise<Uint8Array> {
 async function createRosbagWithFindingsDb(): Promise<Uint8Array> {
   const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload());
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload());
+  const scanPayload = sqliteBlobLiteral(buildMinimalSensorMsgsLaserScanPayload());
+  const diagnosticsPayload = sqliteBlobLiteral(buildMinimalDiagnosticMsgsDiagnosticArrayPayload());
 
   return createRosbagDb(`
     INSERT INTO topics(id, name, type, serialization_format, offered_qos_profiles, type_description_hash)
       VALUES
-        (1, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
-        (2, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
-        (3, '/scan', 'sensor_msgs/msg/LaserScan', 'cdr', '', 'hash-scan');
+        (1, '/diagnostics', 'diagnostic_msgs/msg/DiagnosticArray', 'cdr', '', 'hash-diagnostics'),
+        (2, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
+        (3, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
+        (4, '/scan', 'sensor_msgs/msg/LaserScan', 'cdr', '', 'hash-scan');
     INSERT INTO messages(id, topic_id, timestamp, data)
       VALUES
-        (1, 2, 1000000000, ${odomPayload}),
-        (2, 2, 2000000000, ${odomPayload}),
-        (3, 1, 2500000000, ${fixPayload}),
-        (4, 1, 3500000000, X'00'),
-        (5, 3, 1000000000, X'00'),
-        (6, 3, 7000000000, X'00');
+        (1, 3, 1000000000, ${odomPayload}),
+        (2, 3, 2000000000, ${odomPayload}),
+        (3, 2, 2500000000, ${fixPayload}),
+        (4, 2, 3500000000, X'00'),
+        (5, 4, 1000000000, ${scanPayload}),
+        (6, 4, 7000000000, ${scanPayload}),
+        (7, 1, 4000000000, ${diagnosticsPayload});
   `);
 }
 

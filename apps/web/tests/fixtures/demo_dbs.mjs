@@ -46,6 +46,78 @@ function buildMinimalSensorMsgsNavSatFixPayload(position = {}) {
   return payload;
 }
 
+function writeCdrString(payload, offset, value) {
+  const aligned = offset + ((4 - (offset % 4)) % 4);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setUint32(aligned, value.length, true);
+  let next = aligned + 4;
+  for (let index = 0; index < value.length; index += 1) {
+    payload[next + index] = value.charCodeAt(index);
+  }
+  next += value.length;
+  const padding = (4 - (value.length % 4)) % 4;
+  return next + padding;
+}
+
+function writeCdrSequenceHeader(payload, offset, length) {
+  const aligned = offset + ((4 - (offset % 4)) % 4);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setUint32(aligned, length, true);
+  return aligned + 4;
+}
+
+function writeCdrFloat32Sequence(payload, offset, values) {
+  let next = writeCdrSequenceHeader(payload, offset, values.length);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  for (const value of values) {
+    view.setFloat32(next, value, true);
+    next += 4;
+  }
+  return next;
+}
+
+function buildMinimalDiagnosticMsgsDiagnosticArrayPayload(
+  statuses = [{ level: 2, name: "cpu", message: "overheated" }]
+) {
+  const payload = new Uint8Array(256);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  let offset = writeCdrSequenceHeader(payload, 20, statuses.length);
+  for (const status of statuses) {
+    payload[offset] = status.level;
+    offset += 1;
+    offset = writeCdrString(payload, offset, status.name ?? "node");
+    offset = writeCdrString(payload, offset, status.message ?? "fault");
+    offset = writeCdrString(payload, offset, status.hardwareId ?? "hw");
+    offset = writeCdrSequenceHeader(payload, offset, 0);
+  }
+
+  return payload.slice(0, offset);
+}
+
+function buildMinimalSensorMsgsLaserScanPayload(ranges = [1.0, 2.0], intensities = []) {
+  const payload = new Uint8Array(128);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat32(20, -1.0, true);
+  view.setFloat32(24, 1.0, true);
+  view.setFloat32(28, 0.1, true);
+  view.setFloat32(32, 0.0, true);
+  view.setFloat32(36, 0.1, true);
+  view.setFloat32(40, 0.05, true);
+  view.setFloat32(44, 30.0, true);
+
+  let offset = writeCdrFloat32Sequence(payload, 48, ranges);
+  offset = writeCdrFloat32Sequence(payload, offset, intensities);
+
+  return payload.slice(0, offset);
+}
+
 async function createRosbagDb(topicAndMessageSql) {
   const sqlite3 = await sqlite3InitModule();
   const db = new sqlite3.oo1.DB(":memory:");
@@ -110,20 +182,24 @@ export async function createCleanDemoDb() {
 export async function createFindingsDemoDb() {
   const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload());
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload());
+  const scanPayload = sqliteBlobLiteral(buildMinimalSensorMsgsLaserScanPayload());
+  const diagnosticsPayload = sqliteBlobLiteral(buildMinimalDiagnosticMsgsDiagnosticArrayPayload());
 
   return createRosbagDb(`
     INSERT INTO topics(id, name, type, serialization_format, offered_qos_profiles, type_description_hash)
       VALUES
-        (1, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
-        (2, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
-        (3, '/scan', 'sensor_msgs/msg/LaserScan', 'cdr', '', 'hash-scan');
+        (1, '/diagnostics', 'diagnostic_msgs/msg/DiagnosticArray', 'cdr', '', 'hash-diagnostics'),
+        (2, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
+        (3, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
+        (4, '/scan', 'sensor_msgs/msg/LaserScan', 'cdr', '', 'hash-scan');
     INSERT INTO messages(id, topic_id, timestamp, data)
       VALUES
-        (1, 2, 1000000000, ${odomPayload}),
-        (2, 2, 2000000000, ${odomPayload}),
-        (3, 1, 2500000000, ${fixPayload}),
-        (4, 1, 3500000000, X'00'),
-        (5, 3, 1000000000, X'00'),
-        (6, 3, 7000000000, X'00');
+        (1, 3, 1000000000, ${odomPayload}),
+        (2, 3, 2000000000, ${odomPayload}),
+        (3, 2, 2500000000, ${fixPayload}),
+        (4, 2, 3500000000, X'00'),
+        (5, 4, 1000000000, ${scanPayload}),
+        (6, 4, 7000000000, ${scanPayload}),
+        (7, 1, 4000000000, ${diagnosticsPayload});
   `);
 }

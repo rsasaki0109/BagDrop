@@ -41,6 +41,22 @@
     "topics": [
       {
         "id": 0,
+        "name": "/diagnostics",
+        "type": "diagnostic_msgs/msg/DiagnosticArray",
+        "serializationFormat": "cdr",
+        "count": 1,
+        "timeRange": {
+          "startNs": 4000000000,
+          "endNs": 4000000000
+        },
+        "meanRateHz": null,
+        "maxGapNs": null,
+        "status": "ok",
+        "decodedPayloads": 1,
+        "decodeErrors": 0
+      },
+      {
+        "id": 1,
         "name": "/fix",
         "type": "sensor_msgs/msg/NavSatFix",
         "serializationFormat": "cdr",
@@ -56,7 +72,7 @@
         "decodeErrors": 1
       },
       {
-        "id": 1,
+        "id": 2,
         "name": "/odom",
         "type": "nav_msgs/msg/Odometry",
         "serializationFormat": "cdr",
@@ -72,7 +88,7 @@
         "decodeErrors": 0
       },
       {
-        "id": 2,
+        "id": 3,
         "name": "/scan",
         "type": "sensor_msgs/msg/LaserScan",
         "serializationFormat": "cdr",
@@ -84,11 +100,11 @@
         "meanRateHz": 0.3333333333333333,
         "maxGapNs": 6000000000,
         "status": "warning",
-        "decodedPayloads": 0,
+        "decodedPayloads": 2,
         "decodeErrors": 0
       }
     ],
-    "messageCount": 6,
+    "messageCount": 7,
     "timeRange": {
       "startNs": 1000000000,
       "endNs": 7000000000
@@ -96,7 +112,7 @@
     "storageStatus": "ready",
     "findings": [
       {
-        "id": "stream-count-mismatch-0",
+        "id": "stream-count-mismatch-1",
         "severity": "error",
         "title": "Stream count mismatch",
         "detail": "Topic /fix streamed 2 messages, but the catalog aggregate reported 5.",
@@ -108,7 +124,7 @@
         }
       },
       {
-        "id": "cdr-decode-failed-0",
+        "id": "cdr-decode-failed-1",
         "severity": "warning",
         "title": "CDR decode failures",
         "detail": "Topic /fix had 1 CDR payload(s) that could not be decoded.",
@@ -120,7 +136,7 @@
         }
       },
       {
-        "id": "stream-large-gap-2",
+        "id": "stream-large-gap-3",
         "severity": "warning",
         "title": "Large timestamp gap",
         "detail": "Topic /scan has a maximum inter-message gap of 6 s.",
@@ -128,6 +144,20 @@
         "timeBasis": "record_time",
         "evidence": {
           "maxGapNs": 6000000000
+        }
+      },
+      {
+        "id": "diagnostic-errors-0",
+        "severity": "error",
+        "title": "Diagnostic errors reported",
+        "detail": "Topic /diagnostics decoded 1 ERROR-level diagnostic status (e.g. cpu).",
+        "topic": "/diagnostics",
+        "timeBasis": "record_time",
+        "evidence": {
+          "errors": 1,
+          "warnings": 0,
+          "stale": 0,
+          "ok": 0
         }
       }
     ]
@@ -142,7 +172,7 @@
     {
       "id": "message-count",
       "label": "Messages",
-      "value": 6
+      "value": 7
     },
     {
       "id": "storage-status",
@@ -157,12 +187,12 @@
     {
       "id": "stream-batches-read",
       "label": "Stream batches read",
-      "value": 3
+      "value": 4
     },
     {
       "id": "stream-verified-topics",
       "label": "Stream verified topics",
-      "value": 3
+      "value": 4
     },
     {
       "id": "moonbit-backend",
@@ -172,12 +202,12 @@
     {
       "id": "moonbit-batches-consumed",
       "label": "MoonBit batches consumed",
-      "value": 3
+      "value": 4
     }
   ],
   "findings": [
     {
-      "id": "stream-count-mismatch-0",
+      "id": "stream-count-mismatch-1",
       "severity": "error",
       "title": "Stream count mismatch",
       "detail": "Topic /fix streamed 2 messages, but the catalog aggregate reported 5.",
@@ -189,7 +219,7 @@
       }
     },
     {
-      "id": "cdr-decode-failed-0",
+      "id": "cdr-decode-failed-1",
       "severity": "warning",
       "title": "CDR decode failures",
       "detail": "Topic /fix had 1 CDR payload(s) that could not be decoded.",
@@ -201,7 +231,7 @@
       }
     },
     {
-      "id": "stream-large-gap-2",
+      "id": "stream-large-gap-3",
       "severity": "warning",
       "title": "Large timestamp gap",
       "detail": "Topic /scan has a maximum inter-message gap of 6 s.",
@@ -209,6 +239,20 @@
       "timeBasis": "record_time",
       "evidence": {
         "maxGapNs": 6000000000
+      }
+    },
+    {
+      "id": "diagnostic-errors-0",
+      "severity": "error",
+      "title": "Diagnostic errors reported",
+      "detail": "Topic /diagnostics decoded 1 ERROR-level diagnostic status (e.g. cpu).",
+      "topic": "/diagnostics",
+      "timeBasis": "record_time",
+      "evidence": {
+        "errors": 1,
+        "warnings": 0,
+        "stale": 0,
+        "ok": 0
       }
     }
   ]

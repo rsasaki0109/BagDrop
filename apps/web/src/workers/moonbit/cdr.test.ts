@@ -9,6 +9,7 @@ import {
   buildMinimalNavMsgsOdometryPayload,
   buildMinimalNavMsgsPathPayload,
   buildMinimalSensorMsgsImuPayload,
+  buildMinimalSensorMsgsLaserScanPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
   buildMinimalStdMsgsFloat32Payload,
   buildMinimalStdMsgsFloat64Payload,
@@ -34,6 +35,7 @@ import {
   validateNavMsgsOdometry,
   validateNavMsgsPath,
   validateSensorMsgsImu,
+  validateSensorMsgsLaserScan,
   validateSensorMsgsNavSatFix
 } from "./cdr";
 
@@ -163,6 +165,14 @@ describe("cdr", () => {
   it("rejects truncated imu payloads", () => {
     const payload = buildMinimalSensorMsgsImuPayload().slice(0, 128);
     expect(validateSensorMsgsImu(payload)).toBe(false);
+  });
+
+  it("validates sensor_msgs/msg/LaserScan payloads", () => {
+    const payload = buildMinimalSensorMsgsLaserScanPayload([1.5, 2.5, 3.5], [0.1, 0.2, 0.3]);
+
+    expect(validateSensorMsgsLaserScan(payload)).toBe(true);
+    expect(validateKnownCdrPayload("sensor_msgs/msg/LaserScan", payload)).toBe(true);
+    expect(validateKnownCdrPayload("sensor_msgs/msg/Imu", payload)).toBe(false);
   });
 
   it("validates diagnostic_msgs/msg/DiagnosticArray payloads", () => {
