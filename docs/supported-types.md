@@ -2,7 +2,9 @@
 
 BagDrop currently decodes CDR payloads for:
 
+- `std_msgs/msg/Float32`
 - `std_msgs/msg/Float64`
+- `geometry_msgs/msg/PoseStamped`
 - `nav_msgs/msg/Odometry`
 - `sensor_msgs/msg/NavSatFix`
 - `sensor_msgs/msg/Imu`

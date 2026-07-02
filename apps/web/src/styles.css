@@ -524,15 +524,22 @@ button {
   min-width: 0;
 }
 
-.finding-topic {
+.finding-topic-link {
   margin-top: 8px;
   display: inline-flex;
   padding: 3px 8px;
   border-radius: 999px;
+  border: 1px solid #355247;
   background: #22302a;
   color: #d4eee2;
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  cursor: pointer;
+}
+
+.finding-topic-link:hover {
+  border-color: #6fae92;
+  background: #274036;
 }
 
 .finding-evidence {

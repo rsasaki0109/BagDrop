@@ -346,11 +346,11 @@ function renderTopicPlotPanel(
           : intervalCount;
   const plotCopy =
     activePlotKind === "xy"
-      ? "Odometry pose projected to x/y. Green marks the first pose and orange marks the last."
+      ? "Pose projected to x/y. Green marks the first pose and orange marks the last."
       : activePlotKind === "latlon"
         ? "NavSatFix latitude and longitude track. Green marks the first fix and orange marks the last."
         : activePlotKind === "value"
-          ? "Decoded std_msgs/msg/Float64 values over bag time."
+          ? `Decoded ${topic.type} values over bag time.`
           : `Message interval Δt (seconds) vs bag time. Orange line marks the ${formatNumber(5)} s large-gap warning threshold.`;
 
   return `
@@ -467,6 +467,21 @@ function bindEvents(root: HTMLElement, state: AppState, actions: AppActions): vo
       if (plotKind === "intervals" || plotKind === "xy" || plotKind === "latlon" || plotKind === "value") {
         actions.onPlotKindSelect(plotKind);
       }
+    });
+  }
+
+  for (const topicLink of root.querySelectorAll<HTMLButtonElement>(".finding-topic-link")) {
+    const topicName = topicLink.dataset.topicName;
+    if (!topicName) {
+      continue;
+    }
+
+    topicLink.addEventListener("click", () => {
+      actions.onTopicSelect(topicName);
+      root.querySelector(`tr[data-topic-name="${CSS.escape(topicName)}"]`)?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
     });
   }
 

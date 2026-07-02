@@ -132,7 +132,7 @@ function renderFindingItem(finding: Finding): string {
       <div class="finding-body">
         <strong>${escapeHtml(finding.title)}</strong>
         <p>${escapeHtml(finding.detail)}</p>
-        ${finding.topic ? `<div class="finding-topic">${escapeHtml(finding.topic)}</div>` : ""}
+        ${finding.topic ? `<button type="button" class="finding-topic-link" data-topic-name="${escapeHtml(finding.topic)}">${escapeHtml(finding.topic)}</button>` : ""}
         ${renderEvidence(finding)}
       </div>
     </li>

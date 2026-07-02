@@ -134,6 +134,38 @@ export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
   return view.getFloat64(0, true);
 }
 
+export function decodeStdMsgsFloat32(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload) || payload.length !== 8) {
+    return null;
+  }
+
+  const view = new DataView(payload.buffer, payload.byteOffset + 4, 4);
+  return view.getFloat32(0, true);
+}
+
+export function decodeGeometryMsgsPoseStampedXY(payload: Uint8Array): { x: number; y: number } | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return null;
+  }
+
+  if (!reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  const x = reader.readFloat64();
+  const y = reader.readFloat64();
+  if (x === null || y === null) {
+    return null;
+  }
+
+  return { x, y };
+}
+
 export function decodeNavMsgsOdometryXY(payload: Uint8Array): { x: number; y: number } | null {
   if (!isCdrLittleEndian(payload)) {
     return null;
@@ -155,6 +187,24 @@ export function decodeNavMsgsOdometryXY(payload: Uint8Array): { x: number; y: nu
   }
 
   return { x, y };
+}
+
+export function validateGeometryMsgsPoseStamped(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipDoubles(7) &&
+    reader.consumedEntirePayload()
+  );
 }
 
 export function validateNavMsgsOdometry(payload: Uint8Array): boolean {
@@ -248,7 +298,9 @@ export function validateSensorMsgsImu(payload: Uint8Array): boolean {
 
 export function hasCdrDecoder(topicType: string): boolean {
   return (
+    topicType === "std_msgs/msg/Float32" ||
     topicType === "std_msgs/msg/Float64" ||
+    topicType === "geometry_msgs/msg/PoseStamped" ||
     topicType === "nav_msgs/msg/Odometry" ||
     topicType === "sensor_msgs/msg/NavSatFix" ||
     topicType === "sensor_msgs/msg/Imu"
@@ -257,8 +309,12 @@ export function hasCdrDecoder(topicType: string): boolean {
 
 export function validateKnownCdrPayload(topicType: string, payload: Uint8Array): boolean {
   switch (topicType) {
+    case "std_msgs/msg/Float32":
+      return decodeStdMsgsFloat32(payload) !== null;
     case "std_msgs/msg/Float64":
       return decodeStdMsgsFloat64(payload) !== null;
+    case "geometry_msgs/msg/PoseStamped":
+      return validateGeometryMsgsPoseStamped(payload);
     case "nav_msgs/msg/Odometry":
       return validateNavMsgsOdometry(payload);
     case "sensor_msgs/msg/NavSatFix":
@@ -275,6 +331,28 @@ export function buildMinimalStdMsgsFloat64Payload(value = 0): Uint8Array {
   payload.set([0x00, 0x01, 0x00, 0x00], 0);
   const view = new DataView(payload.buffer, payload.byteOffset);
   view.setFloat64(8, value, true);
+  return payload;
+}
+
+export function buildMinimalStdMsgsFloat32Payload(value = 0): Uint8Array {
+  const payload = new Uint8Array(8);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat32(4, value, true);
+  return payload;
+}
+
+export function buildMinimalGeometryMsgsPoseStampedPayload(position: { x?: number; y?: number; z?: number } = {}): Uint8Array {
+  const payload = new Uint8Array(80);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(24, position.x ?? 0, true);
+  view.setFloat64(32, position.y ?? 0, true);
+  view.setFloat64(40, position.z ?? 0, true);
+
   return payload;
 }
 

@@ -111,6 +111,44 @@ test "consume batch decodes sensor_msgs imu payloads" {
 }
 
 ///|
+test "consume batch decodes std_msgs float32 payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":2,\"name\":\"/speed\",\"type\":\"std_msgs/msg/Float32\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/speed\",\"topicType\":\"std_msgs/msg/Float32\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[8],\"payloadsBase64\":[\"AAEAAAAAKEI=\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/speed") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
+test "consume batch decodes geometry_msgs pose stamped payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":3,\"name\":\"/amcl_pose\",\"type\":\"geometry_msgs/msg/PoseStamped\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/amcl_pose\",\"topicType\":\"geometry_msgs/msg/PoseStamped\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[80],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/amcl_pose") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
 test "finish writes result json and count mismatch finding" {
   let state = CoreState::new()
   ignore(state.register_topic_json(

@@ -1,11 +1,25 @@
 import type { TopicMessageBatch } from "../../model/message_batch";
 import type { TopicValuePoint } from "../../model/result";
 import { base64ToUint8Array } from "../../platform/base64";
-import { decodeStdMsgsFloat64 } from "../moonbit/cdr";
+import { decodeStdMsgsFloat32, decodeStdMsgsFloat64 } from "../moonbit/cdr";
 
 export type { TopicValuePoint };
 
 export const VALUE_SERIES_MAX_POINTS = 2000;
+
+const VALUE_TOPIC_TYPES = new Set(["std_msgs/msg/Float32", "std_msgs/msg/Float64"]);
+
+function decodeScalarValue(topicType: string, payload: Uint8Array): number | null {
+  if (topicType === "std_msgs/msg/Float64") {
+    return decodeStdMsgsFloat64(payload);
+  }
+
+  if (topicType === "std_msgs/msg/Float32") {
+    return decodeStdMsgsFloat32(payload);
+  }
+
+  return null;
+}
 
 export function downsampleValueSeries(
   points: readonly TopicValuePoint[],
@@ -29,7 +43,7 @@ class ValueSeriesCollector {
   private readonly points: TopicValuePoint[] = [];
 
   consumeBatch(batch: TopicMessageBatch): void {
-    if (batch.topicType !== "std_msgs/msg/Float64") {
+    if (!VALUE_TOPIC_TYPES.has(batch.topicType)) {
       return;
     }
 
@@ -41,7 +55,7 @@ class ValueSeriesCollector {
 
       try {
         const payload = base64ToUint8Array(encodedPayload);
-        const value = decodeStdMsgsFloat64(payload);
+        const value = decodeScalarValue(batch.topicType, payload);
         if (value !== null) {
           this.points.push({
             timestampNs: batch.timestampsNs[index],

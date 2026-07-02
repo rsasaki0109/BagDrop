@@ -78,7 +78,7 @@ export function drawValueChart(
 
   drawLabel(
     context,
-    `${topic.name} · std_msgs/msg/Float64`,
+    `${topic.name} · ${topic.type}`,
     padding.left,
     18,
     CHART_COLORS.label

@@ -1,11 +1,34 @@
 import type { TopicMessageBatch } from "../../model/message_batch";
 import type { TopicTrajectoryPoint } from "../../model/result";
 import { base64ToUint8Array } from "../../platform/base64";
-import { decodeNavMsgsOdometryXY } from "../moonbit/cdr";
+import {
+  decodeGeometryMsgsPoseStampedXY,
+  decodeNavMsgsOdometryXY
+} from "../moonbit/cdr";
 
 export type { TopicTrajectoryPoint };
 
 export const TRAJECTORY_SERIES_MAX_POINTS = 2000;
+
+const TRAJECTORY_TOPIC_TYPES = new Set([
+  "geometry_msgs/msg/PoseStamped",
+  "nav_msgs/msg/Odometry"
+]);
+
+function decodeTrajectoryXY(
+  topicType: string,
+  payload: Uint8Array
+): { x: number; y: number } | null {
+  if (topicType === "nav_msgs/msg/Odometry") {
+    return decodeNavMsgsOdometryXY(payload);
+  }
+
+  if (topicType === "geometry_msgs/msg/PoseStamped") {
+    return decodeGeometryMsgsPoseStampedXY(payload);
+  }
+
+  return null;
+}
 
 export function downsampleTrajectorySeries(
   points: readonly TopicTrajectoryPoint[],
@@ -29,7 +52,7 @@ class TrajectorySeriesCollector {
   private readonly points: TopicTrajectoryPoint[] = [];
 
   consumeBatch(batch: TopicMessageBatch): void {
-    if (batch.topicType !== "nav_msgs/msg/Odometry") {
+    if (!TRAJECTORY_TOPIC_TYPES.has(batch.topicType)) {
       return;
     }
 
@@ -40,7 +63,7 @@ class TrajectorySeriesCollector {
 
       try {
         const payload = base64ToUint8Array(encodedPayload);
-        const position = decodeNavMsgsOdometryXY(payload);
+        const position = decodeTrajectoryXY(batch.topicType, payload);
         if (position) {
           this.points.push(position);
         }

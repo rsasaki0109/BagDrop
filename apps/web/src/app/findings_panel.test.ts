@@ -88,7 +88,8 @@ describe("findings_panel", () => {
     });
 
     expect(html).toContain("finding-summary-pill");
-    expect(html).toContain("/odom");
+    expect(html).toContain('class="finding-topic-link"');
+    expect(html).toContain('data-topic-name="/odom"');
     expect(html).toContain("Max Gap Ns");
     expect(html).toContain("6,000,000,000");
   });

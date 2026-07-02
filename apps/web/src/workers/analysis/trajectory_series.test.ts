@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalNavMsgsOdometryPayload } from "../moonbit/cdr";
+import { buildMinimalGeometryMsgsPoseStampedPayload, buildMinimalNavMsgsOdometryPayload } from "../moonbit/cdr";
 import { TrajectorySeriesRegistry, downsampleTrajectorySeries } from "./trajectory_series";
 
 describe("downsampleTrajectorySeries", () => {
@@ -37,5 +37,22 @@ describe("TrajectorySeriesRegistry", () => {
       { x: 1.5, y: -2.25 },
       { x: 1.5, y: -2.25 }
     ]);
+  });
+
+  it("extracts pose stamped x/y positions from payloads", () => {
+    const registry = new TrajectorySeriesRegistry();
+    const payload = buildMinimalGeometryMsgsPoseStampedPayload({ x: 0.5, y: 1.25 });
+    const batch: TopicMessageBatch = {
+      topicName: "/amcl_pose",
+      topicType: "geometry_msgs/msg/PoseStamped",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000],
+      payloadSizesBytes: [payload.length],
+      payloadsBase64: [uint8ArrayToBase64(payload)]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/amcl_pose")).toEqual([{ x: 0.5, y: 1.25 }]);
   });
 });

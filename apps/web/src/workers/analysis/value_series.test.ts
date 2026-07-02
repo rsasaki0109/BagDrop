@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalStdMsgsFloat64Payload } from "../moonbit/cdr";
+import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload } from "../moonbit/cdr";
 import { downsampleValueSeries, ValueSeriesRegistry } from "./value_series";
 
 describe("ValueSeriesRegistry", () => {
@@ -36,6 +36,29 @@ describe("ValueSeriesRegistry", () => {
       { timestampNs: 2_000_000_000, value: 2 },
       { timestampNs: 5_000_000_000, value: 5 },
       { timestampNs: 7_000_000_000, value: 7 }
+    ]);
+  });
+
+  it("extracts std_msgs/msg/Float32 values with timestamps", () => {
+    const registry = new ValueSeriesRegistry();
+    const payload = buildMinimalStdMsgsFloat32Payload(21.5);
+    const batch: TopicMessageBatch = {
+      topicName: "/speed",
+      topicType: "std_msgs/msg/Float32",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000, 2_000_000_000],
+      payloadSizesBytes: [payload.length, payload.length],
+      payloadsBase64: [
+        uint8ArrayToBase64(payload),
+        uint8ArrayToBase64(buildMinimalStdMsgsFloat32Payload(22.5))
+      ]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/speed")).toEqual([
+      { timestampNs: 1_000_000_000, value: 21.5 },
+      { timestampNs: 2_000_000_000, value: 22.5 }
     ]);
   });
 });
