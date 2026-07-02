@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalGeometryMsgsPoseStampedPayload, buildMinimalNavMsgsOdometryPayload } from "../moonbit/cdr";
+import { buildMinimalGeometryMsgsPoseStampedPayload, buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload, buildMinimalNavMsgsOdometryPayload } from "../moonbit/cdr";
 import { TrajectorySeriesRegistry, downsampleTrajectorySeries } from "./trajectory_series";
 
 describe("downsampleTrajectorySeries", () => {
@@ -54,5 +54,22 @@ describe("TrajectorySeriesRegistry", () => {
     registry.consumeBatch(batch);
 
     expect(registry.finalize().get("/amcl_pose")).toEqual([{ x: 0.5, y: 1.25 }]);
+  });
+
+  it("extracts pose with covariance stamped x/y positions from payloads", () => {
+    const registry = new TrajectorySeriesRegistry();
+    const payload = buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload({ x: 2, y: -0.5 });
+    const batch: TopicMessageBatch = {
+      topicName: "/robot_pose",
+      topicType: "geometry_msgs/msg/PoseWithCovarianceStamped",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000],
+      payloadSizesBytes: [payload.length],
+      payloadsBase64: [uint8ArrayToBase64(payload)]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/robot_pose")).toEqual([{ x: 2, y: -0.5 }]);
   });
 });

@@ -11,7 +11,7 @@ Recorded UI flows (Playwright + ffmpeg):
 | Demo | GIF |
 | --- | --- |
 | Clean bag → topic plots | ![Clean bag demo](docs/assets/demo-clean-bag.gif) |
-| Bag with findings | ![Findings demo](docs/assets/demo-findings.gif) |
+| Bag with findings → topic jump | ![Findings demo](docs/assets/demo-findings.gif) |
 
 Regenerate with `pnpm --filter @bagdrop/web record:demo` (requires Playwright Chromium and ffmpeg).
 
@@ -159,7 +159,7 @@ The app is served from `apps/web` and is configured for GitHub Project Pages wit
 
 - TypeScript owns browser APIs, drag and drop, Worker lifecycle, rendering, PWA, and local exports.
 - Official SQLite Wasm owns SQLite parsing, B-tree access, schema probing, and database integrity behavior.
-- MoonBit Wasm owns streaming statistics, stream verification findings, starter CDR validation, and (later) diagnostics, health scoring, and plugin contracts.
+- MoonBit Wasm owns streaming statistics, stream verification findings, starter CDR validation, and (later) diagnostics and plugin contracts.
 - Bag data stays on the user's device. The app must not send raw bag bytes, decoded messages, derived statistics, or generated reports to the network.
 
 See [docs/architecture/overview.md](docs/architecture/overview.md) and [docs/privacy.md](docs/privacy.md).

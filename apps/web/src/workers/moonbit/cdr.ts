@@ -143,7 +143,33 @@ export function decodeStdMsgsFloat32(payload: Uint8Array): number | null {
   return view.getFloat32(0, true);
 }
 
+export function decodeStdMsgsInt32(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload) || payload.length !== 8) {
+    return null;
+  }
+
+  const view = new DataView(payload.buffer, payload.byteOffset + 4, 4);
+  return view.getInt32(0, true);
+}
+
+export function decodeStdMsgsUInt32(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload) || payload.length !== 8) {
+    return null;
+  }
+
+  const view = new DataView(payload.buffer, payload.byteOffset + 4, 4);
+  return view.getUint32(0, true);
+}
+
 export function decodeGeometryMsgsPoseStampedXY(payload: Uint8Array): { x: number; y: number } | null {
+  return decodeHeaderPoseXY(payload);
+}
+
+export function decodeGeometryMsgsPoseWithCovarianceStampedXY(payload: Uint8Array): { x: number; y: number } | null {
+  return decodeHeaderPoseXY(payload);
+}
+
+function decodeHeaderPoseXY(payload: Uint8Array): { x: number; y: number } | null {
   if (!isCdrLittleEndian(payload)) {
     return null;
   }
@@ -187,6 +213,24 @@ export function decodeNavMsgsOdometryXY(payload: Uint8Array): { x: number; y: nu
   }
 
   return { x, y };
+}
+
+export function validateGeometryMsgsPoseWithCovarianceStamped(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipDoubles(43) &&
+    reader.consumedEntirePayload()
+  );
 }
 
 export function validateGeometryMsgsPoseStamped(payload: Uint8Array): boolean {
@@ -300,7 +344,10 @@ export function hasCdrDecoder(topicType: string): boolean {
   return (
     topicType === "std_msgs/msg/Float32" ||
     topicType === "std_msgs/msg/Float64" ||
+    topicType === "std_msgs/msg/Int32" ||
+    topicType === "std_msgs/msg/UInt32" ||
     topicType === "geometry_msgs/msg/PoseStamped" ||
+    topicType === "geometry_msgs/msg/PoseWithCovarianceStamped" ||
     topicType === "nav_msgs/msg/Odometry" ||
     topicType === "sensor_msgs/msg/NavSatFix" ||
     topicType === "sensor_msgs/msg/Imu"
@@ -313,8 +360,14 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
       return decodeStdMsgsFloat32(payload) !== null;
     case "std_msgs/msg/Float64":
       return decodeStdMsgsFloat64(payload) !== null;
+    case "std_msgs/msg/Int32":
+      return decodeStdMsgsInt32(payload) !== null;
+    case "std_msgs/msg/UInt32":
+      return decodeStdMsgsUInt32(payload) !== null;
     case "geometry_msgs/msg/PoseStamped":
       return validateGeometryMsgsPoseStamped(payload);
+    case "geometry_msgs/msg/PoseWithCovarianceStamped":
+      return validateGeometryMsgsPoseWithCovarianceStamped(payload);
     case "nav_msgs/msg/Odometry":
       return validateNavMsgsOdometry(payload);
     case "sensor_msgs/msg/NavSatFix":
@@ -342,8 +395,40 @@ export function buildMinimalStdMsgsFloat32Payload(value = 0): Uint8Array {
   return payload;
 }
 
+export function buildMinimalStdMsgsInt32Payload(value = 0): Uint8Array {
+  const payload = new Uint8Array(8);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setInt32(4, value, true);
+  return payload;
+}
+
+export function buildMinimalStdMsgsUInt32Payload(value = 0): Uint8Array {
+  const payload = new Uint8Array(8);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setUint32(4, value, true);
+  return payload;
+}
+
 export function buildMinimalGeometryMsgsPoseStampedPayload(position: { x?: number; y?: number; z?: number } = {}): Uint8Array {
   const payload = new Uint8Array(80);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(24, position.x ?? 0, true);
+  view.setFloat64(32, position.y ?? 0, true);
+  view.setFloat64(40, position.z ?? 0, true);
+
+  return payload;
+}
+
+export function buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload(
+  position: { x?: number; y?: number; z?: number } = {}
+): Uint8Array {
+  const payload = new Uint8Array(368);
   payload.set([0x00, 0x01, 0x00, 0x00], 0);
   payload[12] = 0x01;
   payload[16] = 0x00;

@@ -2,18 +2,25 @@ import { describe, expect, it } from "vitest";
 import { uint8ArrayToBase64 } from "../../platform/base64";
 import {
   buildMinimalGeometryMsgsPoseStampedPayload,
+  buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload,
   buildMinimalNavMsgsOdometryPayload,
   buildMinimalSensorMsgsImuPayload,
   buildMinimalSensorMsgsNavSatFixPayload,
   buildMinimalStdMsgsFloat32Payload,
   buildMinimalStdMsgsFloat64Payload,
+  buildMinimalStdMsgsInt32Payload,
+  buildMinimalStdMsgsUInt32Payload,
   decodeGeometryMsgsPoseStampedXY,
+  decodeGeometryMsgsPoseWithCovarianceStampedXY,
   decodeNavMsgsOdometryXY,
   decodeSensorMsgsNavSatFixLatLon,
   decodeStdMsgsFloat32,
   decodeStdMsgsFloat64,
+  decodeStdMsgsInt32,
+  decodeStdMsgsUInt32,
   isCdrLittleEndian,
   validateGeometryMsgsPoseStamped,
+  validateGeometryMsgsPoseWithCovarianceStamped,
   validateKnownCdrPayload,
   validateNavMsgsOdometry,
   validateSensorMsgsImu,
@@ -38,6 +45,16 @@ describe("cdr", () => {
     expect(validateKnownCdrPayload("std_msgs/msg/Float64", payload)).toBe(false);
   });
 
+  it("decodes std_msgs/msg/Int32 and UInt32 payloads", () => {
+    const intPayload = buildMinimalStdMsgsInt32Payload(-7);
+    const uintPayload = buildMinimalStdMsgsUInt32Payload(42);
+
+    expect(decodeStdMsgsInt32(intPayload)).toBe(-7);
+    expect(decodeStdMsgsUInt32(uintPayload)).toBe(42);
+    expect(validateKnownCdrPayload("std_msgs/msg/Int32", intPayload)).toBe(true);
+    expect(validateKnownCdrPayload("std_msgs/msg/UInt32", uintPayload)).toBe(true);
+  });
+
   it("validates geometry_msgs/msg/PoseStamped payloads", () => {
     const payload = buildMinimalGeometryMsgsPoseStampedPayload();
 
@@ -51,6 +68,20 @@ describe("cdr", () => {
     const payload = buildMinimalGeometryMsgsPoseStampedPayload({ x: 4.5, y: -2, z: 0.25 });
 
     expect(decodeGeometryMsgsPoseStampedXY(payload)).toEqual({ x: 4.5, y: -2 });
+  });
+
+  it("validates geometry_msgs/msg/PoseWithCovarianceStamped payloads", () => {
+    const payload = buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload();
+
+    expect(payload.length).toBe(368);
+    expect(validateGeometryMsgsPoseWithCovarianceStamped(payload)).toBe(true);
+    expect(validateKnownCdrPayload("geometry_msgs/msg/PoseWithCovarianceStamped", payload)).toBe(true);
+  });
+
+  it("decodes geometry_msgs/msg/PoseWithCovarianceStamped pose x/y", () => {
+    const payload = buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload({ x: 1.25, y: 3.5 });
+
+    expect(decodeGeometryMsgsPoseWithCovarianceStampedXY(payload)).toEqual({ x: 1.25, y: 3.5 });
   });
 
   it("validates nav_msgs/msg/Odometry payloads", () => {

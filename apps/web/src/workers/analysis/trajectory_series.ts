@@ -3,6 +3,7 @@ import type { TopicTrajectoryPoint } from "../../model/result";
 import { base64ToUint8Array } from "../../platform/base64";
 import {
   decodeGeometryMsgsPoseStampedXY,
+  decodeGeometryMsgsPoseWithCovarianceStampedXY,
   decodeNavMsgsOdometryXY
 } from "../moonbit/cdr";
 
@@ -12,6 +13,7 @@ export const TRAJECTORY_SERIES_MAX_POINTS = 2000;
 
 const TRAJECTORY_TOPIC_TYPES = new Set([
   "geometry_msgs/msg/PoseStamped",
+  "geometry_msgs/msg/PoseWithCovarianceStamped",
   "nav_msgs/msg/Odometry"
 ]);
 
@@ -25,6 +27,10 @@ function decodeTrajectoryXY(
 
   if (topicType === "geometry_msgs/msg/PoseStamped") {
     return decodeGeometryMsgsPoseStampedXY(payload);
+  }
+
+  if (topicType === "geometry_msgs/msg/PoseWithCovarianceStamped") {
+    return decodeGeometryMsgsPoseWithCovarianceStampedXY(payload);
   }
 
   return null;

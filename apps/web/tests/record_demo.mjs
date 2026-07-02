@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import {
   captureAppFrame,
   dropDemoBag,
+  jumpToFindingTopic,
   prepareDemoPage,
   selectPlotKind,
   selectTopic,
@@ -52,6 +53,10 @@ async function recordFindingsDemo(page, baseUrl) {
 
   await page.locator(".finding-list .finding").nth(1).scrollIntoViewIfNeeded();
   await page.waitForTimeout(200);
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
+
+  await jumpToFindingTopic(page, "/fix");
+  await selectPlotKind(page, "latlon");
   frames.push({ png: await captureAppFrame(page), durationSec: 2.0 });
 
   return frames;

@@ -149,6 +149,44 @@ test "consume batch decodes geometry_msgs pose stamped payloads" {
 }
 
 ///|
+test "consume batch decodes std_msgs int32 payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":4,\"name\":\"/counter\",\"type\":\"std_msgs/msg/Int32\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/counter\",\"topicType\":\"std_msgs/msg/Int32\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[8],\"payloadsBase64\":[\"AAEAACoAAAA=\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/counter") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
+test "consume batch decodes geometry_msgs pose with covariance stamped payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":5,\"name\":\"/robot_pose\",\"type\":\"geometry_msgs/msg/PoseWithCovarianceStamped\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/robot_pose\",\"topicType\":\"geometry_msgs/msg/PoseWithCovarianceStamped\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[368],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/robot_pose") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
 test "finish writes result json and count mismatch finding" {
   let state = CoreState::new()
   ignore(state.register_topic_json(

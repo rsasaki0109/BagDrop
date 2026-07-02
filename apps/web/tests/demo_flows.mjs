@@ -46,6 +46,13 @@ export async function selectPlotKind(page, plotKind) {
   await waitForPlotCanvas(page);
 }
 
+export async function jumpToFindingTopic(page, topicName) {
+  await page.locator(`.finding-topic-link[data-topic-name="${topicName}"]`).first().click();
+  await page.locator(`tr[data-topic-name="${topicName}"].is-selected`).waitFor({ timeout: 10_000 });
+  await page.locator(".topic-plot-panel").waitFor({ timeout: 10_000 });
+  await waitForPlotCanvas(page);
+}
+
 async function waitForPlotCanvas(page) {
   await page.locator("#topic-plot-canvas").waitFor({ timeout: 10_000 });
   await page.waitForTimeout(250);

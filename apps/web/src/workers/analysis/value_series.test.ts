@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload } from "../moonbit/cdr";
+import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload } from "../moonbit/cdr";
 import { downsampleValueSeries, ValueSeriesRegistry } from "./value_series";
 
 describe("ValueSeriesRegistry", () => {
@@ -60,5 +60,32 @@ describe("ValueSeriesRegistry", () => {
       { timestampNs: 1_000_000_000, value: 21.5 },
       { timestampNs: 2_000_000_000, value: 22.5 }
     ]);
+  });
+
+  it("extracts std_msgs/msg/Int32 and UInt32 values with timestamps", () => {
+    const registry = new ValueSeriesRegistry();
+    const intBatch: TopicMessageBatch = {
+      topicName: "/counter",
+      topicType: "std_msgs/msg/Int32",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000],
+      payloadSizesBytes: [8],
+      payloadsBase64: [uint8ArrayToBase64(buildMinimalStdMsgsInt32Payload(12))]
+    };
+    const uintBatch: TopicMessageBatch = {
+      topicName: "/flags",
+      topicType: "std_msgs/msg/UInt32",
+      serializationFormat: "cdr",
+      timestampsNs: [2_000_000_000],
+      payloadSizesBytes: [8],
+      payloadsBase64: [uint8ArrayToBase64(buildMinimalStdMsgsUInt32Payload(99))]
+    };
+
+    registry.consumeBatch(intBatch);
+    registry.consumeBatch(uintBatch);
+
+    const result = registry.finalize();
+    expect(result.get("/counter")).toEqual([{ timestampNs: 1_000_000_000, value: 12 }]);
+    expect(result.get("/flags")).toEqual([{ timestampNs: 2_000_000_000, value: 99 }]);
   });
 });
