@@ -4,4 +4,5 @@ export interface TopicMessageBatch {
   serializationFormat: string | null;
   timestampsNs: number[];
   payloadSizesBytes: number[];
+  payloadsBase64: string[];
 }

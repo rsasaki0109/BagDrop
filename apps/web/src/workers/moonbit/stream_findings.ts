@@ -8,6 +8,8 @@ export interface StreamTopicSnapshot {
   messageCount: number;
   catalogCount: number | null;
   maxGapNs: number | null;
+  decodedPayloads: number;
+  decodeErrors: number;
 }
 
 export function topicStatusFromSnapshot(
@@ -55,6 +57,21 @@ export function buildStreamFindings(snapshots: readonly StreamTopicSnapshot[]): 
         timeBasis: "record_time",
         evidence: {
           maxGapNs: snapshot.maxGapNs
+        }
+      });
+    }
+
+    if (snapshot.decodeErrors > 0) {
+      findings.push({
+        id: `cdr-decode-failed-${snapshot.catalogId}`,
+        severity: "warning",
+        title: "CDR decode failures",
+        detail: `Topic ${snapshot.name} had ${snapshot.decodeErrors} CDR payload(s) that could not be decoded.`,
+        topic: snapshot.name,
+        timeBasis: "record_time",
+        evidence: {
+          decodedPayloads: snapshot.decodedPayloads,
+          decodeErrors: snapshot.decodeErrors
         }
       });
     }

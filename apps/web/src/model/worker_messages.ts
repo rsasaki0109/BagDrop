@@ -1,4 +1,5 @@
 import type { BagCatalog, ResultBundle, WorkerProgress } from "./result";
+import type { BagdropTestHooks } from "../workers/test_hooks";
 
 export interface WorkerFileRef {
   id: string;
@@ -11,6 +12,7 @@ export type BagWorkerRequest =
       id: string;
       type: "scan";
       files: WorkerFileRef[];
+      testHooks?: BagdropTestHooks;
     }
   | {
       id: string;

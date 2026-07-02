@@ -1,4 +1,5 @@
 import type { Database, Sqlite3Result, Sqlite3Static, WasmPointer } from "@sqlite.org/sqlite-wasm";
+import { getBagdropTestHooks } from "../test_hooks";
 
 export const DIRECT_FILE_VFS_NAME = "bagdrop-direct-file";
 
@@ -22,6 +23,13 @@ interface DirectFileVfsState {
 let installedState: DirectFileVfsState | null = null;
 
 export function detectDirectFileVfsSupport(): DirectFileVfsSupport {
+  if (getBagdropTestHooks().forceDisableDirectFileVfs) {
+    return {
+      supported: false,
+      reason: "DirectFileVFS disabled by BagDrop test harness."
+    };
+  }
+
   if (!isWorkerLikeScope()) {
     return {
       supported: false,

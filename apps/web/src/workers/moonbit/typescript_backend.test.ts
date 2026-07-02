@@ -22,7 +22,8 @@ describe("TypeScriptMoonBitCoreBackend", () => {
       topicType: "nav_msgs/msg/Odometry",
       serializationFormat: "cdr",
       timestampsNs: [1_000_000_000, 2_000_000_000, 3_000_000_000],
-      payloadSizesBytes: [1, 1, 1]
+      payloadSizesBytes: [1, 1, 1],
+      payloadsBase64: ["", "", ""]
     });
 
     const result = backend.finish(handle);
@@ -34,7 +35,9 @@ describe("TypeScriptMoonBitCoreBackend", () => {
         messageCount: 3,
         maxGapNs: 1_000_000_000,
         meanRateHz: 1.5,
-        status: "ok"
+        status: "ok",
+        decodedPayloads: 0,
+        decodeErrors: 0
       }
     ]);
     expect(result.findings).toEqual([]);
@@ -57,7 +60,8 @@ describe("TypeScriptMoonBitCoreBackend", () => {
       topicType: "sensor_msgs/msg/NavSatFix",
       serializationFormat: "cdr",
       timestampsNs: [1_000_000_000],
-      payloadSizesBytes: [1]
+      payloadSizesBytes: [1],
+      payloadsBase64: [""]
     });
 
     const result = backend.finish(handle);

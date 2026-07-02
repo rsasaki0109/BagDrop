@@ -17,8 +17,40 @@ pub fn CoreState::consume_batch_json(
     guard item is Number(timestamp, ..) else { continue }
     self.consume_timestamp(topic_name, timestamp.to_int())
   }
+  match obj.get("payloadsBase64") {
+    Some(Array(payload_items)) => self.consume_payloads_base64(topic_name, payload_items)
+    _ => ()
+  }
   self.batches_consumed = self.batches_consumed + 1
   0
+}
+
+///|
+fn CoreState::consume_payloads_base64(
+  self : CoreState,
+  topic_name : String,
+  payload_items : Array[Json],
+) -> Unit {
+  guard self.topics.get(topic_name) is Some(topic) else { return }
+  if !has_cdr_decoder(topic.type_name) {
+    return
+  }
+  for item in payload_items {
+    guard item is String(base64) && base64.length() > 0 else { continue }
+    let bytes = try @base64.decode(base64) catch {
+      _ => {
+        self.record_decode_error(topic_name)
+        continue
+      }
+    }
+    self.consume_cdr_payload(topic_name, bytes)
+  }
+}
+
+///|
+fn CoreState::record_decode_error(self : CoreState, topic_name : String) -> Unit {
+  guard self.topics.get(topic_name) is Some(topic) else { return }
+  topic.decode_errors = topic.decode_errors + 1
 }
 
 ///|

@@ -43,7 +43,8 @@ describe("WasmMoonBitCoreBackend", () => {
         topicType: "nav_msgs/msg/Odometry",
         serializationFormat: "cdr",
         timestampsNs: [1_000_000_000, 2_000_000_000],
-        payloadSizesBytes: [1, 1]
+        payloadSizesBytes: [1, 1],
+        payloadsBase64: ["", ""]
       })
     ).toBe(0);
 

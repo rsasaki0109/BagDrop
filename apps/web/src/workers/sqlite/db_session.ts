@@ -15,6 +15,7 @@ import {
   stageFileToOpfsSqlite,
   stagingPathForId
 } from "./opfs_fallback";
+import { getBagdropTestHooks } from "../test_hooks";
 
 export const MAX_DESERIALIZE_DB_BYTES = 64 * 1024 * 1024;
 
@@ -39,11 +40,16 @@ export async function withReadonlySegmentDatabase<T>(
     return withDirectFileDatabase(sqlite3, file, summary, callback);
   }
 
-  if (file.size <= MAX_DESERIALIZE_DB_BYTES) {
+  const hooks = getBagdropTestHooks();
+  if (!hooks.forceOpfsStaging && file.size <= MAX_DESERIALIZE_DB_BYTES) {
     return withDeserializeDatabase(sqlite3, file, callback);
   }
 
   if (!isOpfsSqliteAvailable(sqlite3)) {
+    if (hooks.forceOpfsStaging) {
+      return withDeserializeDatabase(sqlite3, file, callback);
+    }
+
     throw new SqliteSegmentDeferredError(
       `SQLite access deferred for ${summary.path}`,
       createDeferredFinding(summary, "opfs_unavailable", {

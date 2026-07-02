@@ -67,6 +67,27 @@ fn build_findings(topics : Map[String, TopicState]) -> Array[Json] {
           _ => ()
         }
     }
+    if topic.decode_errors > 0 {
+      findings.push(cdr_decode_failed_finding(topic))
+    }
   }
   findings
+}
+
+///|
+fn cdr_decode_failed_finding(topic : TopicState) -> Json {
+  Json::object({
+    "id": Json::string("cdr-decode-failed-" + topic.topic_id.to_string()),
+    "severity": Json::string("warning"),
+    "title": Json::string("CDR decode failures"),
+    "detail": Json::string(
+      "Topic " + topic.name + " had " + topic.decode_errors.to_string() + " CDR payload(s) that could not be decoded.",
+    ),
+    "topic": Json::string(topic.name),
+    "timeBasis": Json::string("record_time"),
+    "evidence": Json::object({
+      "decodedPayloads": Json::number(topic.payloads_decoded.to_double()),
+      "decodeErrors": Json::number(topic.decode_errors.to_double()),
+    }),
+  })
 }

@@ -1,6 +1,7 @@
 ///|
 pub(all) struct TopicState {
   name : String
+  type_name : String
   topic_id : Int
   catalog_count : Int?
   mut message_count : Int
@@ -8,6 +9,8 @@ pub(all) struct TopicState {
   mut max_timestamp_ns : Int?
   mut max_gap_ns : Int?
   mut previous_timestamp_ns : Int?
+  mut payloads_decoded : Int
+  mut decode_errors : Int
 }
 
 ///|
@@ -25,13 +28,14 @@ pub fn CoreState::new() -> CoreState {
 pub fn CoreState::register_topic(
   self : CoreState,
   name : String,
-  _type : String,
+  type_name : String,
   _serialization_format : String?,
   topic_id : Int,
   catalog_count : Int?,
 ) -> Unit {
   self.topics[name] = {
     name,
+    type_name,
     topic_id,
     catalog_count,
     message_count: 0,
@@ -39,6 +43,8 @@ pub fn CoreState::register_topic(
     max_timestamp_ns: None,
     max_gap_ns: None,
     previous_timestamp_ns: None,
+    payloads_decoded: 0,
+    decode_errors: 0,
   }
 }
 
@@ -69,6 +75,20 @@ pub fn CoreState::consume_timestamp(
     None => ()
   }
   topic.previous_timestamp_ns = Some(timestamp_ns)
+}
+
+///|
+pub fn CoreState::consume_cdr_payload(
+  self : CoreState,
+  topic_name : String,
+  payload : Bytes,
+) -> Unit {
+  guard self.topics.get(topic_name) is Some(topic) else { return }
+  if validate_known_cdr_payload(topic.type_name, payload) {
+    topic.payloads_decoded = topic.payloads_decoded + 1
+  } else {
+    topic.decode_errors = topic.decode_errors + 1
+  }
 }
 
 ///|

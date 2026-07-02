@@ -1,6 +1,7 @@
 import type { Database, SqlValue } from "@sqlite.org/sqlite-wasm";
 import type { TopicCatalogEntry } from "../../model/result";
 import type { TopicMessageBatch } from "../../model/message_batch";
+import { uint8ArrayToBase64 } from "../../platform/base64";
 
 export const STREAM_BATCH_SIZE = 1000;
 export const LARGE_GAP_WARNING_NS = 5_000_000_000;
@@ -96,7 +97,8 @@ function streamTopicMessages(
     const rows = db.selectObjects(`
       SELECT
         timestamp,
-        length(data) AS payloadSize
+        length(data) AS payloadSize,
+        data AS payload
       FROM messages
       WHERE topic_id = ${topicId} AND timestamp > ${lastTimestamp}
       ORDER BY timestamp
@@ -167,6 +169,7 @@ function rowsToMessageBatch(
 ): TopicMessageBatch {
   const timestampsNs: number[] = [];
   const payloadSizesBytes: number[] = [];
+  const payloadsBase64: string[] = [];
 
   for (const row of rows) {
     const timestampNs = valueAsNumber(row.timestamp);
@@ -176,6 +179,7 @@ function rowsToMessageBatch(
 
     timestampsNs.push(timestampNs);
     payloadSizesBytes.push(valueAsNumber(row.payloadSize) ?? 0);
+    payloadsBase64.push(sqlBlobToBase64(row.payload));
   }
 
   return {
@@ -183,7 +187,8 @@ function rowsToMessageBatch(
     topicType,
     serializationFormat,
     timestampsNs,
-    payloadSizesBytes
+    payloadSizesBytes,
+    payloadsBase64
   };
 }
 
@@ -218,4 +223,16 @@ function valueAsNumber(value: SqlValue | undefined): number | null {
   }
 
   return null;
+}
+
+function sqlBlobToBase64(value: SqlValue | undefined): string {
+  if (value instanceof Uint8Array) {
+    return value.length > 0 ? uint8ArrayToBase64(value) : "";
+  }
+
+  if (value instanceof ArrayBuffer) {
+    return uint8ArrayToBase64(new Uint8Array(value));
+  }
+
+  return "";
 }

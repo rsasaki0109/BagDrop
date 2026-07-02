@@ -22,6 +22,8 @@ export interface MoonBitTopicResult {
   maxGapNs: number | null;
   meanRateHz: number | null;
   status: "ok" | "warning" | "error";
+  decodedPayloads: number;
+  decodeErrors: number;
 }
 
 export interface MoonBitAnalysisResult {

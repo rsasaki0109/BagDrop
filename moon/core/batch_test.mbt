@@ -1,4 +1,16 @@
 ///|
+test "decode std_msgs float64 payload" {
+  let payload = @base64.decode("AAEAAAAAAAAAAAAAAABFQA==")
+  inspect(decode_std_msgs_float64(payload), content="Some(42)")
+}
+
+///|
+test "reject invalid cdr payload" {
+  let payload = b"\x00\x00\x00\x00"
+  inspect(validate_known_cdr_payload("std_msgs/msg/Float64", payload), content="false")
+}
+
+///|
 test "register topic json accepts utf8 bytes payload" {
   let state = CoreState::new()
   let payload = @utf8.encode(
@@ -16,10 +28,29 @@ test "consume batch json accepts utf8 bytes payload" {
     ),
   ))
   let payload = @utf8.encode(
-    "{\"v\":1,\"topicName\":\"/odom\",\"topicType\":\"nav_msgs/msg/Odometry\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000,2000000000],\"payloadSizesBytes\":[1,1]}",
+    "{\"v\":1,\"topicName\":\"/odom\",\"topicType\":\"nav_msgs/msg/Odometry\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000,2000000000],\"payloadSizesBytes\":[1,1],\"payloadsBase64\":[]}",
   )
   inspect(state.consume_batch_json(payload), content="0")
   inspect(state.batches_consumed, content="1")
+}
+
+///|
+test "consume batch decodes std_msgs float64 payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":1,\"name\":\"/temperature\",\"type\":\"std_msgs/msg/Float64\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/temperature\",\"topicType\":\"std_msgs/msg/Float64\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[16],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAABFQA==\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/temperature") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
 }
 
 ///|
@@ -32,7 +63,7 @@ test "finish writes result json and count mismatch finding" {
   ))
   ignore(state.consume_batch_json(
     @utf8.encode(
-      "{\"v\":1,\"topicName\":\"/odom\",\"topicType\":\"nav_msgs/msg/Odometry\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000,2000000000],\"payloadSizesBytes\":[1,1]}",
+      "{\"v\":1,\"topicName\":\"/odom\",\"topicType\":\"nav_msgs/msg/Odometry\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000,2000000000],\"payloadSizesBytes\":[1,1],\"payloadsBase64\":[]}",
     ),
   ))
   let result = state.to_result_json()

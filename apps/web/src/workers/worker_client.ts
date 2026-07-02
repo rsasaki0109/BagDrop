@@ -1,5 +1,6 @@
 import type { ResultBundle, WorkerProgress } from "../model/result";
 import type { BagWorkerRequest, BagWorkerResponse, WorkerFileRef } from "../model/worker_messages";
+import { bagdropTestWorkerUrl, hasActiveBagdropTestHooks, readBagdropTestHooksFromPage } from "./test_hooks";
 
 export type ProgressHandler = (progress: WorkerProgress) => void;
 
@@ -8,7 +9,7 @@ export class BagWorkerClient {
   private activeRequestId: string | null = null;
 
   constructor() {
-    this.worker = new Worker(new URL("./bag.worker.ts", import.meta.url), {
+    this.worker = new Worker(bagdropTestWorkerUrl(new URL("./bag.worker.ts", import.meta.url)), {
       type: "module",
       name: "bagdrop-bag-worker"
     });
@@ -50,10 +51,12 @@ export class BagWorkerClient {
       };
 
       this.worker.addEventListener("message", handleMessage);
+      const testHooks = readBagdropTestHooksFromPage();
       this.worker.postMessage({
         id: requestId,
         type: "scan",
-        files
+        files,
+        ...(hasActiveBagdropTestHooks(testHooks) ? { testHooks } : {})
       } satisfies BagWorkerRequest);
     });
   }

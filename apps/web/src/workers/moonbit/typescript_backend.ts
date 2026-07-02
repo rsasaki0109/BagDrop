@@ -1,5 +1,7 @@
 import type { TopicMessageBatch } from "../../model/message_batch";
 import type { TopicCatalogEntry } from "../../model/result";
+import { base64ToUint8Array } from "../../platform/base64";
+import { validateKnownCdrPayload, hasCdrDecoder } from "./cdr";
 import {
   buildStreamFindings,
   topicStatusFromSnapshot,
@@ -21,6 +23,8 @@ interface TopicAccumulator {
   maxTimestampNs: number | null;
   maxGapNs: number | null;
   previousTimestampNs: number | null;
+  decodedPayloads: number;
+  decodeErrors: number;
 }
 
 export class TypeScriptMoonBitCoreBackend implements MoonBitCoreBackend {
@@ -48,7 +52,9 @@ export class TypeScriptMoonBitCoreBackend implements MoonBitCoreBackend {
       minTimestampNs: null,
       maxTimestampNs: null,
       maxGapNs: null,
-      previousTimestampNs: null
+      previousTimestampNs: null,
+      decodedPayloads: 0,
+      decodeErrors: 0
     });
     return MOONBIT_CORE_STATUS_OK;
   }
@@ -77,6 +83,28 @@ export class TypeScriptMoonBitCoreBackend implements MoonBitCoreBackend {
       }
 
       topic.previousTimestampNs = timestampNs;
+    }
+
+    for (let index = 0; index < batch.payloadsBase64.length; index += 1) {
+      if (!hasCdrDecoder(batch.topicType)) {
+        break;
+      }
+
+      const encodedPayload = batch.payloadsBase64[index];
+      if (encodedPayload.length === 0) {
+        continue;
+      }
+
+      try {
+        const payload = base64ToUint8Array(encodedPayload);
+        if (validateKnownCdrPayload(batch.topicType, payload)) {
+          topic.decodedPayloads += 1;
+        } else {
+          topic.decodeErrors += 1;
+        }
+      } catch {
+        topic.decodeErrors += 1;
+      }
     }
 
     this.batchesConsumed += 1;
@@ -131,7 +159,9 @@ function toSnapshot(topic: TopicAccumulator): StreamTopicSnapshot {
     name: topic.registration.name,
     messageCount: topic.messageCount,
     catalogCount: topic.registration.catalogCount,
-    maxGapNs: topic.maxGapNs
+    maxGapNs: topic.maxGapNs,
+    decodedPayloads: topic.decodedPayloads,
+    decodeErrors: topic.decodeErrors
   };
 }
 
@@ -150,6 +180,8 @@ function toTopicResult(topic: TopicAccumulator): MoonBitTopicResult {
     maxGapNs: snapshot.maxGapNs,
     meanRateHz:
       durationSeconds && durationSeconds > 0 ? snapshot.messageCount / durationSeconds : null,
-    status: topicStatusFromSnapshot(snapshot)
+    status: topicStatusFromSnapshot(snapshot),
+    decodedPayloads: topic.decodedPayloads,
+    decodeErrors: topic.decodeErrors
   };
 }

@@ -33,7 +33,8 @@ export function encodeTopicMessageBatch(batch: TopicMessageBatch): Uint8Array {
     topicType: batch.topicType,
     serializationFormat: batch.serializationFormat,
     timestampsNs: batch.timestampsNs,
-    payloadSizesBytes: batch.payloadSizesBytes
+    payloadSizesBytes: batch.payloadSizesBytes,
+    payloadsBase64: batch.payloadsBase64
   });
 }
 
@@ -44,6 +45,7 @@ export function decodeTopicMessageBatch(bytes: Uint8Array): TopicMessageBatch {
     serializationFormat?: unknown;
     timestampsNs?: unknown;
     payloadSizesBytes?: unknown;
+    payloadsBase64?: unknown;
   };
 
   return {
@@ -51,7 +53,8 @@ export function decodeTopicMessageBatch(bytes: Uint8Array): TopicMessageBatch {
     topicType: asString(payload.topicType),
     serializationFormat: asNullableString(payload.serializationFormat),
     timestampsNs: asNumberArray(payload.timestampsNs),
-    payloadSizesBytes: asNumberArray(payload.payloadSizesBytes)
+    payloadSizesBytes: asNumberArray(payload.payloadSizesBytes),
+    payloadsBase64: asStringArray(payload.payloadsBase64)
   };
 }
 
@@ -112,6 +115,14 @@ function asNumberArray(value: unknown): number[] {
   return value.filter((entry): entry is number => typeof entry === "number" && Number.isFinite(entry));
 }
 
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
 function asTopicResults(value: unknown): MoonBitTopicResult[] {
   if (!Array.isArray(value)) {
     return [];
@@ -134,7 +145,9 @@ function asTopicResults(value: unknown): MoonBitTopicResult[] {
         messageCount: asFiniteNumber(topic.messageCount) ?? 0,
         maxGapNs: asNullableFiniteNumber(topic.maxGapNs),
         meanRateHz: asNullableFiniteNumber(topic.meanRateHz),
-        status: asTopicStatus(topic.status)
+        status: asTopicStatus(topic.status),
+        decodedPayloads: asFiniteNumber(topic.decodedPayloads) ?? 0,
+        decodeErrors: asFiniteNumber(topic.decodeErrors) ?? 0
       };
     })
     .filter((entry): entry is MoonBitTopicResult => entry !== null);

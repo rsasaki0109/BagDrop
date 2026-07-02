@@ -56,13 +56,13 @@ The Worker catalog uses `@sqlite.org/sqlite-wasm` with three read paths:
 
 The deserialize fallback is capped at 64 MiB per `.db3`. Files above that cap fall back to OPFS staging when available, otherwise they are reported as deferred.
 
-Browser coverage lives in `apps/web/tests/direct_file_vfs_smoke.mjs`.
+Browser coverage lives in `apps/web/tests/direct_file_vfs_smoke.mjs` (DirectFileVFS path) and `apps/web/tests/opfs_staging_smoke.mjs` (OPFS staging path via `?bagdrop_test=opfs`).
 
 ## Current Stream Analysis
 
 After a ready SQLite catalog is produced, the bag Worker runs a lightweight stream scan:
 
 1. Re-open each scanned `.db3` segment through the same readonly storage paths as catalog.
-2. Stream `messages.timestamp` (and payload size) in fixed batches without decoding CDR payloads.
-3. Verify streamed counts against catalog aggregates, compute `maxGapNs` and refined `meanRateHz`, and emit findings for mismatches or large gaps.
+2. Stream `messages.timestamp`, payload size, and base64-encoded payload bytes in fixed batches.
+3. Verify streamed counts against catalog aggregates, compute `maxGapNs` and refined `meanRateHz`, decode known CDR types, and emit findings for mismatches, large gaps, or decode failures.
 4. Emit columnar `TopicMessageBatch` objects and feed them to MoonBit `core_consume_batch()` through a JSON batch codec. The Worker prefers `apps/web/public/moon/core.wasm`, falls back to `core.stub.wasm`, then to a TypeScript backend. MoonBit returns topic stats, per-topic status, and findings such as stream count mismatches and large timestamp gaps.

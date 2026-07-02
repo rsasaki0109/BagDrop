@@ -8,6 +8,8 @@ import {
 
 const server = await createSmokeViteServer();
 const baseUrl = smokeBaseUrl(server);
+baseUrl.searchParams.set("bagdrop_test", "opfs");
+
 const browser = await launchSmokeBrowser();
 
 try {
@@ -24,6 +26,19 @@ try {
   });
 
   await expectReadyRosbagScan(page);
+
+  await page.getByText("DirectFileVFS unavailable", { exact: true }).waitFor({ timeout: 15_000 });
+  await page
+    .getByText("DirectFileVFS disabled by BagDrop test harness.", { exact: true })
+    .waitFor({ timeout: 15_000 });
+
+  const deferredFindingVisible = await page
+    .getByText("SQLite catalog deferred", { exact: true })
+    .isVisible()
+    .catch(() => false);
+  if (deferredFindingVisible) {
+    throw new Error("OPFS smoke test produced a deferred catalog finding.");
+  }
 } finally {
   await browser.close();
   await server.close();

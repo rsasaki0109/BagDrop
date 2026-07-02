@@ -1,6 +1,10 @@
 # Supported Types
 
-This scaffold does not decode ROS messages yet. The initial generated decoder target list is:
+BagDrop currently decodes CDR payloads for a small starter set in the MoonBit core. The first implemented type is:
+
+- `std_msgs/msg/Float64`
+
+Other types still pass through stream analysis with timestamp statistics only. The initial generated decoder target list is:
 
 - `geometry_msgs/msg/PoseStamped`
 - `geometry_msgs/msg/PoseWithCovarianceStamped`

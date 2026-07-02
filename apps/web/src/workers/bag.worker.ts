@@ -5,6 +5,7 @@ import { runStreamAnalysis } from "./analysis/run_stream_analysis";
 import { detectDirectFileVfsSupport } from "./sqlite/direct_file_vfs";
 import { bootstrapSqliteRuntime } from "./sqlite/bootstrap";
 import { scanSqliteCatalog } from "./sqlite/catalog";
+import { resetBagdropTestHooks, setBagdropTestHooks } from "./test_hooks";
 
 const cancelledRequests = new Set<string>();
 
@@ -27,6 +28,11 @@ self.addEventListener("message", (event: MessageEvent<BagWorkerRequest>) => {
 });
 
 async function handleScan(request: Extract<BagWorkerRequest, { type: "scan" }>): Promise<void> {
+  resetBagdropTestHooks();
+  if (request.testHooks) {
+    setBagdropTestHooks(request.testHooks);
+  }
+
   postProgress(request.id, {
     phase: "inventory",
     message: "Inspecting selected files",

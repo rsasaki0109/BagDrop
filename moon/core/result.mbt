@@ -14,6 +14,8 @@ pub fn CoreState::to_result_json(self : CoreState) -> String {
         None => Json::null()
       },
       "status": Json::string(topic_status(topic)),
+      "decodedPayloads": Json::number(topic.payloads_decoded.to_double()),
+      "decodeErrors": Json::number(topic.decode_errors.to_double()),
     }))
   }
   Json::object({

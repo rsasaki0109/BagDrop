@@ -9,7 +9,9 @@ describe("buildStreamFindings", () => {
         name: "/scan",
         messageCount: 1,
         catalogCount: 2,
-        maxGapNs: LARGE_GAP_WARNING_NS
+        maxGapNs: LARGE_GAP_WARNING_NS,
+        decodedPayloads: 0,
+        decodeErrors: 0
       }
     ]);
 
@@ -24,7 +26,9 @@ describe("buildStreamFindings", () => {
         name: "/imu",
         messageCount: 2,
         catalogCount: 2,
-        maxGapNs: LARGE_GAP_WARNING_NS
+        maxGapNs: LARGE_GAP_WARNING_NS,
+        decodedPayloads: 0,
+        decodeErrors: 0
       }
     ]);
 
@@ -33,6 +37,28 @@ describe("buildStreamFindings", () => {
         id: "stream-large-gap-3",
         severity: "warning",
         topic: "/imu"
+      })
+    ]);
+  });
+
+  it("emits cdr decode failure findings", () => {
+    const findings = buildStreamFindings([
+      {
+        catalogId: 4,
+        name: "/temperature",
+        messageCount: 1,
+        catalogCount: 1,
+        maxGapNs: null,
+        decodedPayloads: 0,
+        decodeErrors: 2
+      }
+    ]);
+
+    expect(findings).toEqual([
+      expect.objectContaining({
+        id: "cdr-decode-failed-4",
+        severity: "warning",
+        topic: "/temperature"
       })
     ]);
   });
