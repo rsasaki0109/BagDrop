@@ -66,5 +66,8 @@ async function waitForPlotCanvas(page) {
 export async function captureAppFrame(page) {
   const shell = page.locator(".app-shell");
   await shell.waitFor({ timeout: 10_000 });
-  return shell.screenshot({ type: "png" });
+  return page.screenshot({
+    type: "png",
+    clip: { x: 0, y: 0, width: DEMO_VIEWPORT.width, height: DEMO_VIEWPORT.height }
+  });
 }

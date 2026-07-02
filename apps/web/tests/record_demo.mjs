@@ -45,6 +45,10 @@ async function recordCleanBagDemo(page, baseUrl) {
 
   await selectTopic(page, "/imu");
   await selectPlotKind(page, "value");
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
+
+  await selectTopic(page, "/cmd_vel");
+  await selectPlotKind(page, "value");
   frames.push({ png: await captureAppFrame(page), durationSec: 2.0 });
 
   return frames;

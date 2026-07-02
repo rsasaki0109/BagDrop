@@ -4,6 +4,7 @@ import type { WorkerFileRef } from "../../src/model/worker_messages";
 import { runStreamAnalysis } from "../../src/workers/analysis/run_stream_analysis";
 import {
   buildMinimalDiagnosticMsgsDiagnosticArrayPayload,
+  buildMinimalGeometryMsgsTwistStampedPayload,
   buildMinimalNavMsgsOdometryPayload,
   buildMinimalSensorMsgsImuPayload,
   buildMinimalSensorMsgsLaserScanPayload,
@@ -116,6 +117,8 @@ async function createRosbagLikeDb(): Promise<Uint8Array> {
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload());
   const imuPayloadLow = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 }));
   const imuPayloadHigh = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 0, ay: 0, az: 9.8 }));
+  const cmdVelPayloadLow = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.5 }));
+  const cmdVelPayloadHigh = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25 }));
   const tempPayload42 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(42));
   const tempPayload43 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(43));
   const tempPayload44 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(44));
@@ -126,7 +129,8 @@ async function createRosbagLikeDb(): Promise<Uint8Array> {
         (1, '/odom', 'nav_msgs/msg/Odometry', 'cdr', '', 'hash-odom'),
         (2, '/fix', 'sensor_msgs/msg/NavSatFix', 'cdr', '', 'hash-fix'),
         (3, '/imu', 'sensor_msgs/msg/Imu', 'cdr', '', 'hash-imu'),
-        (4, '/temperature', 'std_msgs/msg/Float64', 'cdr', '', 'hash-temp');
+        (4, '/temperature', 'std_msgs/msg/Float64', 'cdr', '', 'hash-temp'),
+        (5, '/cmd_vel', 'geometry_msgs/msg/TwistStamped', 'cdr', '', 'hash-cmd-vel');
     INSERT INTO messages(id, topic_id, timestamp, data)
       VALUES
         (1, 1, 1000000000, ${odomPayload}),
@@ -137,7 +141,9 @@ async function createRosbagLikeDb(): Promise<Uint8Array> {
         (6, 3, 2400000000, ${imuPayloadHigh}),
         (7, 4, 1500000000, ${tempPayload42}),
         (8, 4, 2200000000, ${tempPayload43}),
-        (9, 4, 2800000000, ${tempPayload44});
+        (9, 4, 2800000000, ${tempPayload44}),
+        (10, 5, 1700000000, ${cmdVelPayloadLow}),
+        (11, 5, 2100000000, ${cmdVelPayloadHigh});
   `);
 }
 

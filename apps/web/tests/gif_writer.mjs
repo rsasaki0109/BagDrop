@@ -48,6 +48,10 @@ export function writeGifFromFrames(frames, outputPath, { width = 960, fps = 8 } 
         concatPath,
         "-vf",
         `fps=${fps},scale=${width}:-1:flags=lanczos,palettegen=stats_mode=diff`,
+        "-frames:v",
+        "1",
+        "-update",
+        "1",
         palettePath
       ],
       { stdio: "ignore" }
@@ -66,8 +70,8 @@ export function writeGifFromFrames(frames, outputPath, { width = 960, fps = 8 } 
         concatPath,
         "-i",
         palettePath,
-        "-lavfi",
-        `fps=${fps},scale=${width}:-1:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer`,
+        "-filter_complex",
+        `[0:v]fps=${fps},scale=${width}:-1:flags=lanczos[v];[v][1:v]paletteuse=dither=bayer`,
         outputPath
       ],
       { stdio: "ignore" }

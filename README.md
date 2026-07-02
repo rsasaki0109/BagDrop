@@ -43,7 +43,7 @@ flowchart LR
 
 | | |
 | --- | --- |
-| **Overview** | 9 messages · 4 topics · `ready` · **0 findings** |
+| **Overview** | 11 messages · 5 topics · `ready` · **0 findings** |
 | **Bag health** | **Healthy · 100** |
 | **Backend** | MoonBit `wasm` |
 
@@ -51,6 +51,7 @@ flowchart LR
 
 | Topic | Type | Count | Rate | Max gap | CDR | Status |
 | --- | --- | ---: | --- | --- | --- | :---: |
+| `/cmd_vel` | `geometry_msgs/msg/TwistStamped` | 2 | 2.5 Hz | 0.4 s | **2 ok** | ok |
 | `/fix` | `sensor_msgs/msg/NavSatFix` | 1 | N/A | N/A | **1 ok** | ok |
 | `/imu` | `sensor_msgs/msg/Imu` | 2 | 1.25 Hz | 0.8 s | **2 ok** | ok |
 | `/odom` | `nav_msgs/msg/Odometry` | 3 | 1.5 Hz | 1 s | **3 ok** | ok |
@@ -64,7 +65,7 @@ flowchart LR
 
 Both GNSS and odometry payloads decode successfully. This is the “all green” path.
 
-The GIF above shows the same flow in the live UI: drop a `.db3`, filter topics, review **Healthy** bag health, then open `/odom`, `/temperature`, and `/imu` topic plots.
+The GIF above shows the same flow in the live UI: drop a `.db3`, filter topics, review **Healthy** bag health, then open `/odom`, `/temperature`, `/imu`, and `/cmd_vel` topic plots.
 
 **Topic plots**
 
@@ -72,6 +73,7 @@ Select a topic row to open the plot panel below the Topics table. Use the filter
 
 | Topic | Tabs |
 | --- | --- |
+| `/cmd_vel` | **Intervals** · Value (`linear.x`) |
 | `/odom` | **Intervals** · XY trajectory |
 | `/fix` | **Intervals** · Lat/Lon |
 | `/imu` | **Intervals** · Value (`|linear acceleration|`) |
@@ -106,7 +108,7 @@ Select a topic row to open the plot panel below the Topics table. Use the filter
 | | |
 | --- | --- |
 | **Overview** | 7 messages · 4 topics · `ready` · **4 findings** |
-| **Bag health** | **Critical · 6** |
+| **Bag health** | **Critical · 6** — mix of **Diagnostics** payload errors and **Stream** issues |
 | **Summary** | `2 errors · 2 warnings` |
 
 **Topics**

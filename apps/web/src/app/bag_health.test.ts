@@ -87,6 +87,50 @@ describe("computeBagHealth", () => {
     });
   });
 
+  it("explains diagnostic-only critical findings separately from stream status", () => {
+    const bundle = createBundle({
+      findings: [
+        {
+          id: "diagnostic-errors-0",
+          severity: "error",
+          title: "Diagnostic errors reported",
+          detail: "Topic /diagnostics decoded 1 ERROR-level diagnostic status (e.g. cpu)."
+        }
+      ]
+    });
+
+    expect(computeBagHealth(bundle)).toEqual({
+      level: "critical",
+      label: "Critical",
+      detail:
+        "1 error needs attention before trusting this bag. Includes 1 Diagnostics. Topic CDR decode can still be ok.",
+      score: 65
+    });
+  });
+
+  it("breaks down mixed diagnostic and stream critical findings", () => {
+    const bundle = createBundle({
+      findings: [
+        {
+          id: "diagnostic-errors-0",
+          severity: "error",
+          title: "Diagnostic errors reported",
+          detail: "Topic /diagnostics decoded 1 ERROR-level diagnostic status (e.g. cpu)."
+        },
+        {
+          id: "stream-count-mismatch-1",
+          severity: "error",
+          title: "Stream count mismatch",
+          detail: "Topic /fix streamed 2 messages, but catalog reported 5."
+        }
+      ]
+    });
+
+    expect(computeBagHealth(bundle).detail).toBe(
+      "2 errors need attention before trusting this bag. Includes 1 Diagnostics and 1 Stream."
+    );
+  });
+
   it("returns pending for incomplete catalogs", () => {
     const bundle = createBundle({
       catalog: {

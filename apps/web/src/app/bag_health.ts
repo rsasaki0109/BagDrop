@@ -1,5 +1,5 @@
-import type { ResultBundle } from "../model/result";
-import { summarizeFindings } from "./findings_panel";
+import type { Finding, ResultBundle } from "../model/result";
+import { findingCategory, summarizeFindings } from "./findings_panel";
 
 export type BagHealthLevel = "healthy" | "degraded" | "critical" | "pending" | "blocked";
 
@@ -36,7 +36,7 @@ export function computeBagHealth(bundle: ResultBundle): BagHealth {
     return {
       level: "critical",
       label: "Critical",
-      detail: `${summary.errors} error${summary.errors === 1 ? "" : "s"} ${summary.errors === 1 ? "needs" : "need"} attention before trusting this bag.`,
+      detail: formatCriticalDetail(summary.errors, bundle.findings),
       score: clampScore(100 - summary.errors * 35 - summary.warnings * 12)
     };
   }
@@ -45,7 +45,7 @@ export function computeBagHealth(bundle: ResultBundle): BagHealth {
     return {
       level: "degraded",
       label: "Degraded",
-      detail: `${summary.warnings} warning${summary.warnings === 1 ? "" : "s"} detected during scan.`,
+      detail: formatWarningDetail(summary.warnings, bundle.findings),
       score: clampScore(100 - summary.warnings * 12 - summary.info * 3)
     };
   }
@@ -72,6 +72,101 @@ export function renderBagHealthBadge(health: BagHealth): string {
 
 function clampScore(score: number): number {
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+interface FindingCategoryCounts {
+  diagnostics: number;
+  stream: number;
+  other: number;
+}
+
+function countFindingCategories(
+  findings: readonly Finding[],
+  severity: Finding["severity"]
+): FindingCategoryCounts {
+  const counts: FindingCategoryCounts = { diagnostics: 0, stream: 0, other: 0 };
+
+  for (const finding of findings) {
+    if (finding.severity !== severity) {
+      continue;
+    }
+
+    const category = findingCategory(finding);
+    if (category === "Diagnostics") {
+      counts.diagnostics += 1;
+    } else if (category === "Stream") {
+      counts.stream += 1;
+    } else {
+      counts.other += 1;
+    }
+  }
+
+  return counts;
+}
+
+function formatCategoryBreakdown(counts: FindingCategoryCounts): string | null {
+  const parts: string[] = [];
+
+  if (counts.diagnostics > 0) {
+    parts.push(`${counts.diagnostics} Diagnostics`);
+  }
+
+  if (counts.stream > 0) {
+    parts.push(`${counts.stream} Stream`);
+  }
+
+  if (counts.other > 0) {
+    parts.push(`${counts.other} Other`);
+  }
+
+  if (parts.length === 0) {
+    return null;
+  }
+
+  return `Includes ${parts.join(" and ")}.`;
+}
+
+function formatCriticalDetail(errorCount: number, findings: readonly Finding[]): string {
+  const base =
+    errorCount === 1
+      ? "1 error needs attention before trusting this bag."
+      : `${errorCount} errors need attention before trusting this bag.`;
+  const counts = countFindingCategories(findings, "error");
+  const breakdown = formatCategoryBreakdown(counts);
+
+  if (!breakdown) {
+    return base;
+  }
+
+  if (counts.diagnostics > 0 && counts.stream === 0 && counts.other === 0) {
+    return `${base} ${breakdown} Topic CDR decode can still be ok.`;
+  }
+
+  if (counts.stream > 0 && counts.diagnostics === 0 && counts.other === 0 && errorCount === 1) {
+    return base;
+  }
+
+  return `${base} ${breakdown}`;
+}
+
+function formatWarningDetail(warningCount: number, findings: readonly Finding[]): string {
+  const base = `${warningCount} warning${warningCount === 1 ? "" : "s"} detected during scan.`;
+  const counts = countFindingCategories(findings, "warning");
+  const breakdown = formatCategoryBreakdown(counts);
+
+  if (!breakdown) {
+    return base;
+  }
+
+  if (counts.diagnostics > 0 && counts.stream === 0 && counts.other === 0) {
+    return `${base} ${breakdown}`;
+  }
+
+  if (counts.stream > 0 && counts.diagnostics === 0 && counts.other === 0 && warningCount === 1) {
+    return `${warningCount} warning detected during scan.`;
+  }
+
+  return `${base} ${breakdown}`;
 }
 
 function escapeHtml(value: string): string {

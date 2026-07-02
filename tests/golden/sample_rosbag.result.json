@@ -41,6 +41,22 @@
     "topics": [
       {
         "id": 0,
+        "name": "/cmd_vel",
+        "type": "geometry_msgs/msg/TwistStamped",
+        "serializationFormat": "cdr",
+        "count": 2,
+        "timeRange": {
+          "startNs": 1700000000,
+          "endNs": 2100000000
+        },
+        "meanRateHz": 5,
+        "maxGapNs": 400000000,
+        "status": "ok",
+        "decodedPayloads": 2,
+        "decodeErrors": 0
+      },
+      {
+        "id": 1,
         "name": "/fix",
         "type": "sensor_msgs/msg/NavSatFix",
         "serializationFormat": "cdr",
@@ -56,7 +72,7 @@
         "decodeErrors": 0
       },
       {
-        "id": 1,
+        "id": 2,
         "name": "/imu",
         "type": "sensor_msgs/msg/Imu",
         "serializationFormat": "cdr",
@@ -72,7 +88,7 @@
         "decodeErrors": 0
       },
       {
-        "id": 2,
+        "id": 3,
         "name": "/odom",
         "type": "nav_msgs/msg/Odometry",
         "serializationFormat": "cdr",
@@ -88,7 +104,7 @@
         "decodeErrors": 0
       },
       {
-        "id": 3,
+        "id": 4,
         "name": "/temperature",
         "type": "std_msgs/msg/Float64",
         "serializationFormat": "cdr",
@@ -104,7 +120,7 @@
         "decodeErrors": 0
       }
     ],
-    "messageCount": 9,
+    "messageCount": 11,
     "timeRange": {
       "startNs": 1000000000,
       "endNs": 3000000000
@@ -122,7 +138,7 @@
     {
       "id": "message-count",
       "label": "Messages",
-      "value": 9
+      "value": 11
     },
     {
       "id": "storage-status",
@@ -137,12 +153,12 @@
     {
       "id": "stream-batches-read",
       "label": "Stream batches read",
-      "value": 4
+      "value": 5
     },
     {
       "id": "stream-verified-topics",
       "label": "Stream verified topics",
-      "value": 4
+      "value": 5
     },
     {
       "id": "moonbit-backend",
@@ -152,7 +168,7 @@
     {
       "id": "moonbit-batches-consumed",
       "label": "MoonBit batches consumed",
-      "value": 4
+      "value": 5
     }
   ],
   "findings": []
