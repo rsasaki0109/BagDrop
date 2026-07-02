@@ -156,6 +156,10 @@ class CdrReader {
     return this.skipHeaderStamp() && this.skipString() && this.skipDoubles(7);
   }
 
+  skipTwistStampedFields(): boolean {
+    return this.skipHeaderStamp() && this.skipString() && this.skipDoubles(6);
+  }
+
   skipDiagnosticKeyValue(): boolean {
     return this.skipString() && this.skipString();
   }
@@ -319,6 +323,37 @@ export function validateGeometryMsgsPoseWithCovarianceStamped(payload: Uint8Arra
     reader.skipHeaderStamp() &&
     reader.skipString() &&
     reader.skipDoubles(43) &&
+    reader.consumedEntirePayload()
+  );
+}
+
+export function validateGeometryMsgsTwistStamped(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return reader.skipTwistStampedFields() && reader.consumedEntirePayload();
+}
+
+export function validateGeometryMsgsTwistWithCovarianceStamped(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipDoubles(42) &&
     reader.consumedEntirePayload()
   );
 }
@@ -553,6 +588,8 @@ export function hasCdrDecoder(topicType: string): boolean {
     topicType === "diagnostic_msgs/msg/DiagnosticArray" ||
     topicType === "geometry_msgs/msg/PoseStamped" ||
     topicType === "geometry_msgs/msg/PoseWithCovarianceStamped" ||
+    topicType === "geometry_msgs/msg/TwistStamped" ||
+    topicType === "geometry_msgs/msg/TwistWithCovarianceStamped" ||
     topicType === "nav_msgs/msg/Odometry" ||
     topicType === "nav_msgs/msg/Path" ||
     topicType === "sensor_msgs/msg/NavSatFix" ||
@@ -576,6 +613,10 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
       return validateGeometryMsgsPoseStamped(payload);
     case "geometry_msgs/msg/PoseWithCovarianceStamped":
       return validateGeometryMsgsPoseWithCovarianceStamped(payload);
+    case "geometry_msgs/msg/TwistStamped":
+      return validateGeometryMsgsTwistStamped(payload);
+    case "geometry_msgs/msg/TwistWithCovarianceStamped":
+      return validateGeometryMsgsTwistWithCovarianceStamped(payload);
     case "nav_msgs/msg/Odometry":
       return validateNavMsgsOdometry(payload);
     case "nav_msgs/msg/Path":
@@ -647,6 +688,41 @@ export function buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload(
   view.setFloat64(24, position.x ?? 0, true);
   view.setFloat64(32, position.y ?? 0, true);
   view.setFloat64(40, position.z ?? 0, true);
+
+  return payload;
+}
+
+export function buildMinimalGeometryMsgsTwistStampedPayload(
+  twist: { linearX?: number; linearY?: number; linearZ?: number; angularX?: number; angularY?: number; angularZ?: number } = {}
+): Uint8Array {
+  const payload = new Uint8Array(72);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(24, twist.linearX ?? 0, true);
+  view.setFloat64(32, twist.linearY ?? 0, true);
+  view.setFloat64(40, twist.linearZ ?? 0, true);
+  view.setFloat64(48, twist.angularX ?? 0, true);
+  view.setFloat64(56, twist.angularY ?? 0, true);
+  view.setFloat64(64, twist.angularZ ?? 0, true);
+
+  return payload;
+}
+
+export function buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload(
+  twist: { linearX?: number; linearY?: number; linearZ?: number } = {}
+): Uint8Array {
+  const payload = new Uint8Array(360);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
+
+  const view = new DataView(payload.buffer, payload.byteOffset);
+  view.setFloat64(24, twist.linearX ?? 0, true);
+  view.setFloat64(32, twist.linearY ?? 0, true);
+  view.setFloat64(40, twist.linearZ ?? 0, true);
 
   return payload;
 }

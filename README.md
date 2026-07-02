@@ -15,6 +15,13 @@ Recorded UI flows (Playwright + ffmpeg):
 
 Regenerate with `pnpm --filter @bagdrop/web record:demo` (requires Playwright Chromium and ffmpeg).
 
+## UI highlights
+
+- **Topics filter** — search by topic name or message type; the table shows a `matched / total` count.
+- **Findings panel** — grouped by category (`Stream`, `Diagnostics`, …) with severity pills, topic badges, and evidence rows. Click a topic badge to jump to that row and open its plot.
+- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
+- **CDR column** — per-topic decode success counts from MoonBit validation. See [docs/supported-types.md](docs/supported-types.md) for the full list of supported message types.
+
 ## Example Result
 
 BagDrop turns a dropped rosbag2 SQLite segment into a local `ResultBundle` without uploading bytes.
@@ -56,11 +63,11 @@ flowchart LR
 
 Both GNSS and odometry payloads decode successfully. This is the “all green” path.
 
-The GIF above shows the same flow in the live UI: drop a `.db3`, review **Healthy** bag health, then open `/odom` and `/temperature` topic plots.
+The GIF above shows the same flow in the live UI: drop a `.db3`, filter topics, review **Healthy** bag health, then open `/odom` and `/temperature` topic plots.
 
 **Topic plots**
 
-Select a topic row to open the plot panel below the Topics table. Available tabs depend on message type:
+Select a topic row to open the plot panel below the Topics table. Use the filter box above the table to narrow topics by name or type. Available tabs depend on message type:
 
 | Topic | Tabs |
 | --- | --- |
@@ -130,9 +137,9 @@ Select a topic row to open the plot panel below the Topics table. Available tabs
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Try it live: drop a bag at https://rsasaki0109.github.io/BagDrop/ — findings appear in the right-hand panel with severity pills, topic badges, and evidence rows.
+Try it live: drop a bag at https://rsasaki0109.github.io/BagDrop/ — findings appear in the right-hand panel with severity pills, topic badges, and evidence rows. Diagnostic arrays on `/diagnostics` topics produce **Diagnostics** findings when ERROR or WARN statuses are decoded.
 
-The findings GIF uses the same synthetic `.db3` shape as the golden export. Live scans surface CDR decode failures and large timestamp gaps; the golden JSON also includes a deliberate stream count mismatch for documentation.
+The findings GIF uses the same synthetic `.db3` shape as the golden export. Live scans surface CDR decode failures, diagnostic statuses, and large timestamp gaps; the golden JSON also includes a deliberate stream count mismatch for documentation.
 
 ### Regenerate golden exports
 

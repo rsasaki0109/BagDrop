@@ -137,6 +137,11 @@ fn CdrReader::skip_pose_stamped(self : CdrReader) -> Bool {
 }
 
 ///|
+fn CdrReader::skip_twist_stamped(self : CdrReader) -> Bool {
+  self.skip_header_stamp() && self.skip_string() && self.skip_doubles(6)
+}
+
+///|
 fn CdrReader::skip_diagnostic_key_value(self : CdrReader) -> Bool {
   self.skip_string() && self.skip_string()
 }
@@ -253,6 +258,30 @@ pub fn validate_geometry_msgs_pose_stamped(payload : Bytes) -> Bool {
 }
 
 ///|
+pub fn validate_geometry_msgs_twist_stamped(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
+  reader.skip_twist_stamped() &&
+  reader.consumed_entire_payload()
+}
+
+///|
+pub fn validate_geometry_msgs_twist_with_covariance_stamped(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
+  reader.skip_header_stamp() &&
+  reader.skip_string() &&
+  reader.skip_doubles(42) &&
+  reader.consumed_entire_payload()
+}
+
+///|
 pub fn validate_diagnostic_msgs_diagnostic_array(payload : Bytes) -> Bool {
   if !is_cdr_le(payload) {
     return false
@@ -339,6 +368,8 @@ pub fn validate_known_cdr_payload(topic_type : String, payload : Bytes) -> Bool 
     "diagnostic_msgs/msg/DiagnosticArray" => validate_diagnostic_msgs_diagnostic_array(payload)
     "geometry_msgs/msg/PoseStamped" => validate_geometry_msgs_pose_stamped(payload)
     "geometry_msgs/msg/PoseWithCovarianceStamped" => validate_geometry_msgs_pose_with_covariance_stamped(payload)
+    "geometry_msgs/msg/TwistStamped" => validate_geometry_msgs_twist_stamped(payload)
+    "geometry_msgs/msg/TwistWithCovarianceStamped" => validate_geometry_msgs_twist_with_covariance_stamped(payload)
     "nav_msgs/msg/Odometry" => validate_nav_msgs_odometry(payload)
     "nav_msgs/msg/Path" => validate_nav_msgs_path(payload)
     "sensor_msgs/msg/NavSatFix" => validate_sensor_msgs_nav_sat_fix(payload)
@@ -356,6 +387,8 @@ pub fn has_cdr_decoder(topic_type : String) -> Bool {
   topic_type == "diagnostic_msgs/msg/DiagnosticArray" ||
   topic_type == "geometry_msgs/msg/PoseStamped" ||
   topic_type == "geometry_msgs/msg/PoseWithCovarianceStamped" ||
+  topic_type == "geometry_msgs/msg/TwistStamped" ||
+  topic_type == "geometry_msgs/msg/TwistWithCovarianceStamped" ||
   topic_type == "nav_msgs/msg/Odometry" ||
   topic_type == "nav_msgs/msg/Path" ||
   topic_type == "sensor_msgs/msg/NavSatFix" ||

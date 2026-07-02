@@ -225,6 +225,44 @@ test "consume batch decodes nav_msgs path payloads" {
 }
 
 ///|
+test "consume batch decodes geometry_msgs twist stamped payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":8,\"name\":\"/cmd_vel\",\"type\":\"geometry_msgs/msg/TwistStamped\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/cmd_vel\",\"topicType\":\"geometry_msgs/msg/TwistStamped\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[72],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/cmd_vel") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
+test "consume batch decodes geometry_msgs twist with covariance stamped payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":9,\"name\":\"/velocity\",\"type\":\"geometry_msgs/msg/TwistWithCovarianceStamped\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  let payload = @utf8.encode(
+    "{\"v\":1,\"topicName\":\"/velocity\",\"topicType\":\"geometry_msgs/msg/TwistWithCovarianceStamped\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[360],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"]}",
+  )
+  inspect(state.consume_batch_json(payload), content="0")
+  guard state.topics.get("/velocity") is Some(topic) else {
+    fail("topic missing")
+  }
+  inspect(topic.payloads_decoded, content="1")
+  inspect(topic.decode_errors, content="0")
+}
+
+///|
 test "finish writes result json and count mismatch finding" {
   let state = CoreState::new()
   ignore(state.register_topic_json(

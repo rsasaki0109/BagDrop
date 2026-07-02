@@ -4,6 +4,8 @@ import {
   buildMinimalDiagnosticMsgsDiagnosticArrayPayload,
   buildMinimalGeometryMsgsPoseStampedPayload,
   buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload,
+  buildMinimalGeometryMsgsTwistStampedPayload,
+  buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload,
   buildMinimalNavMsgsOdometryPayload,
   buildMinimalNavMsgsPathPayload,
   buildMinimalSensorMsgsImuPayload,
@@ -26,6 +28,8 @@ import {
   validateDiagnosticMsgsDiagnosticArray,
   validateGeometryMsgsPoseStamped,
   validateGeometryMsgsPoseWithCovarianceStamped,
+  validateGeometryMsgsTwistStamped,
+  validateGeometryMsgsTwistWithCovarianceStamped,
   validateKnownCdrPayload,
   validateNavMsgsOdometry,
   validateNavMsgsPath,
@@ -88,6 +92,23 @@ describe("cdr", () => {
     const payload = buildMinimalGeometryMsgsPoseWithCovarianceStampedPayload({ x: 1.25, y: 3.5 });
 
     expect(decodeGeometryMsgsPoseWithCovarianceStampedXY(payload)).toEqual({ x: 1.25, y: 3.5 });
+  });
+
+  it("validates geometry_msgs/msg/TwistStamped payloads", () => {
+    const payload = buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.5, angularZ: -0.1 });
+
+    expect(payload.length).toBe(72);
+    expect(validateGeometryMsgsTwistStamped(payload)).toBe(true);
+    expect(validateKnownCdrPayload("geometry_msgs/msg/TwistStamped", payload)).toBe(true);
+    expect(validateKnownCdrPayload("geometry_msgs/msg/PoseStamped", payload)).toBe(false);
+  });
+
+  it("validates geometry_msgs/msg/TwistWithCovarianceStamped payloads", () => {
+    const payload = buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload({ linearX: 1.5, linearY: -0.25 });
+
+    expect(payload.length).toBe(360);
+    expect(validateGeometryMsgsTwistWithCovarianceStamped(payload)).toBe(true);
+    expect(validateKnownCdrPayload("geometry_msgs/msg/TwistWithCovarianceStamped", payload)).toBe(true);
   });
 
   it("validates nav_msgs/msg/Odometry payloads", () => {

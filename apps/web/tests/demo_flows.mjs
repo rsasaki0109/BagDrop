@@ -40,6 +40,11 @@ export async function selectTopic(page, topicName) {
   await waitForPlotCanvas(page);
 }
 
+export async function filterTopics(page, query) {
+  await page.locator("#topic-filter").fill(query);
+  await page.waitForTimeout(250);
+}
+
 export async function selectPlotKind(page, plotKind) {
   await page.locator(`.topic-plot-tab[data-plot-kind="${plotKind}"]:not(.is-disabled)`).click();
   await page.locator(`.topic-plot-tab[data-plot-kind="${plotKind}"].is-active`).waitFor({ timeout: 10_000 });

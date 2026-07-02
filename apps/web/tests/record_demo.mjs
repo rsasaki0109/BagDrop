@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import {
   captureAppFrame,
   dropDemoBag,
+  filterTopics,
   jumpToFindingTopic,
   prepareDemoPage,
   selectPlotKind,
@@ -28,6 +29,10 @@ async function recordCleanBagDemo(page, baseUrl) {
   await waitForCleanDemoReady(page);
   frames.push({ png: await captureAppFrame(page), durationSec: 1.8 });
 
+  await filterTopics(page, "temp");
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.2 });
+
+  await filterTopics(page, "");
   await selectTopic(page, "/odom");
   frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
 
