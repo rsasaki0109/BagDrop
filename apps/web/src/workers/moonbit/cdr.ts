@@ -91,6 +91,24 @@ class CdrReader {
     this.offset += 8;
     return true;
   }
+
+  skipUint8(): boolean {
+    if (!this.canRead(1)) {
+      return false;
+    }
+
+    this.offset += 1;
+    return true;
+  }
+
+  skipUint16(): boolean {
+    if (!this.align(2) || !this.canRead(2)) {
+      return false;
+    }
+
+    this.offset += 2;
+    return true;
+  }
 }
 
 export function decodeStdMsgsFloat64(payload: Uint8Array): number | null {
@@ -123,8 +141,33 @@ export function validateNavMsgsOdometry(payload: Uint8Array): boolean {
   );
 }
 
+export function validateSensorMsgsNavSatFix(payload: Uint8Array): boolean {
+  if (!isCdrLittleEndian(payload)) {
+    return false;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation()) {
+    return false;
+  }
+
+  return (
+    reader.skipHeaderStamp() &&
+    reader.skipString() &&
+    reader.skipUint8() &&
+    reader.skipUint16() &&
+    reader.skipDoubles(3) &&
+    reader.skipDoubles(9) &&
+    reader.skipUint8()
+  );
+}
+
 export function hasCdrDecoder(topicType: string): boolean {
-  return topicType === "std_msgs/msg/Float64" || topicType === "nav_msgs/msg/Odometry";
+  return (
+    topicType === "std_msgs/msg/Float64" ||
+    topicType === "nav_msgs/msg/Odometry" ||
+    topicType === "sensor_msgs/msg/NavSatFix"
+  );
 }
 
 export function validateKnownCdrPayload(topicType: string, payload: Uint8Array): boolean {
@@ -133,6 +176,8 @@ export function validateKnownCdrPayload(topicType: string, payload: Uint8Array):
       return decodeStdMsgsFloat64(payload) !== null;
     case "nav_msgs/msg/Odometry":
       return validateNavMsgsOdometry(payload);
+    case "sensor_msgs/msg/NavSatFix":
+      return validateSensorMsgsNavSatFix(payload);
     default:
       return false;
   }
@@ -149,5 +194,13 @@ export function buildMinimalNavMsgsOdometryPayload(): Uint8Array {
     offset += 8;
   }
 
+  return payload;
+}
+
+export function buildMinimalSensorMsgsNavSatFixPayload(): Uint8Array {
+  const payload = new Uint8Array(121);
+  payload.set([0x00, 0x01, 0x00, 0x00], 0);
+  payload[12] = 0x01;
+  payload[16] = 0x00;
   return payload;
 }

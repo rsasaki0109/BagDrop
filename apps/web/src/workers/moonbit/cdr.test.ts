@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import { uint8ArrayToBase64 } from "../../platform/base64";
 import {
   buildMinimalNavMsgsOdometryPayload,
+  buildMinimalSensorMsgsNavSatFixPayload,
   decodeStdMsgsFloat64,
   isCdrLittleEndian,
   validateKnownCdrPayload,
-  validateNavMsgsOdometry
+  validateNavMsgsOdometry,
+  validateSensorMsgsNavSatFix
 } from "./cdr";
 
 describe("cdr", () => {
@@ -31,5 +33,16 @@ describe("cdr", () => {
   it("rejects truncated odometry payloads", () => {
     const payload = buildMinimalNavMsgsOdometryPayload().slice(0, 64);
     expect(validateNavMsgsOdometry(payload)).toBe(false);
+  });
+
+  it("validates sensor_msgs/msg/NavSatFix payloads", () => {
+    const payload = buildMinimalSensorMsgsNavSatFixPayload();
+
+    expect(payload.length).toBe(121);
+    expect(validateSensorMsgsNavSatFix(payload)).toBe(true);
+    expect(validateKnownCdrPayload("sensor_msgs/msg/NavSatFix", payload)).toBe(true);
+    expect(uint8ArrayToBase64(payload)).toBe(
+      "AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+    );
   });
 });

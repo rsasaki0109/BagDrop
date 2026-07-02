@@ -1,0 +1,215 @@
+{
+  "appVersion": "0.0.0",
+  "createdAt": "2026-07-02T10:00:00.000Z",
+  "catalog": {
+    "inventory": {
+      "files": [
+        {
+          "id": "segment-0",
+          "path": "demo_bag/findings_segment_0.db3",
+          "name": "segment_0.db3",
+          "sizeBytes": 49152,
+          "kind": "sqlite",
+          "segmentOrdinal": 0
+        }
+      ],
+      "totalSizeBytes": 49152,
+      "metadataFiles": [],
+      "sqliteFiles": [
+        {
+          "id": "segment-0",
+          "path": "demo_bag/findings_segment_0.db3",
+          "name": "segment_0.db3",
+          "sizeBytes": 49152,
+          "kind": "sqlite",
+          "segmentOrdinal": 0
+        }
+      ],
+      "mcapFiles": [],
+      "messageDefinitionFiles": [],
+      "walFiles": [],
+      "journalFiles": [],
+      "warnings": []
+    },
+    "schemaCapabilities": [
+      "has_embedded_definitions",
+      "has_embedded_metadata",
+      "has_qos",
+      "has_type_hash",
+      "legacy"
+    ],
+    "topics": [
+      {
+        "id": 0,
+        "name": "/fix",
+        "type": "sensor_msgs/msg/NavSatFix",
+        "serializationFormat": "cdr",
+        "count": 5,
+        "timeRange": {
+          "startNs": 2500000000,
+          "endNs": 3500000000
+        },
+        "meanRateHz": 2,
+        "maxGapNs": 1000000000,
+        "status": "error",
+        "decodedPayloads": 1,
+        "decodeErrors": 1
+      },
+      {
+        "id": 1,
+        "name": "/odom",
+        "type": "nav_msgs/msg/Odometry",
+        "serializationFormat": "cdr",
+        "count": 2,
+        "timeRange": {
+          "startNs": 1000000000,
+          "endNs": 2000000000
+        },
+        "meanRateHz": 2,
+        "maxGapNs": 1000000000,
+        "status": "ok",
+        "decodedPayloads": 2,
+        "decodeErrors": 0
+      },
+      {
+        "id": 2,
+        "name": "/scan",
+        "type": "sensor_msgs/msg/LaserScan",
+        "serializationFormat": "cdr",
+        "count": 2,
+        "timeRange": {
+          "startNs": 1000000000,
+          "endNs": 7000000000
+        },
+        "meanRateHz": 0.3333333333333333,
+        "maxGapNs": 6000000000,
+        "status": "warning",
+        "decodedPayloads": 0,
+        "decodeErrors": 0
+      }
+    ],
+    "messageCount": 6,
+    "timeRange": {
+      "startNs": 1000000000,
+      "endNs": 7000000000
+    },
+    "storageStatus": "ready",
+    "findings": [
+      {
+        "id": "stream-count-mismatch-0",
+        "severity": "error",
+        "title": "Stream count mismatch",
+        "detail": "Topic /fix streamed 2 messages, but the catalog aggregate reported 5.",
+        "topic": "/fix",
+        "timeBasis": "record_time",
+        "evidence": {
+          "streamedCount": 2,
+          "catalogCount": 5
+        }
+      },
+      {
+        "id": "cdr-decode-failed-0",
+        "severity": "warning",
+        "title": "CDR decode failures",
+        "detail": "Topic /fix had 1 CDR payload(s) that could not be decoded.",
+        "topic": "/fix",
+        "timeBasis": "record_time",
+        "evidence": {
+          "decodedPayloads": 1,
+          "decodeErrors": 1
+        }
+      },
+      {
+        "id": "stream-large-gap-2",
+        "severity": "warning",
+        "title": "Large timestamp gap",
+        "detail": "Topic /scan has a maximum inter-message gap of 6 s.",
+        "topic": "/scan",
+        "timeBasis": "record_time",
+        "evidence": {
+          "maxGapNs": 6000000000
+        }
+      }
+    ]
+  },
+  "metrics": [
+    {
+      "id": "total-size",
+      "label": "Total size",
+      "value": 49152,
+      "unit": "bytes"
+    },
+    {
+      "id": "message-count",
+      "label": "Messages",
+      "value": 6
+    },
+    {
+      "id": "storage-status",
+      "label": "Storage status",
+      "value": "ready"
+    },
+    {
+      "id": "stream-segments-scanned",
+      "label": "Stream segments scanned",
+      "value": 1
+    },
+    {
+      "id": "stream-batches-read",
+      "label": "Stream batches read",
+      "value": 3
+    },
+    {
+      "id": "stream-verified-topics",
+      "label": "Stream verified topics",
+      "value": 3
+    },
+    {
+      "id": "moonbit-backend",
+      "label": "MoonBit backend",
+      "value": "wasm"
+    },
+    {
+      "id": "moonbit-batches-consumed",
+      "label": "MoonBit batches consumed",
+      "value": 3
+    }
+  ],
+  "findings": [
+    {
+      "id": "stream-count-mismatch-0",
+      "severity": "error",
+      "title": "Stream count mismatch",
+      "detail": "Topic /fix streamed 2 messages, but the catalog aggregate reported 5.",
+      "topic": "/fix",
+      "timeBasis": "record_time",
+      "evidence": {
+        "streamedCount": 2,
+        "catalogCount": 5
+      }
+    },
+    {
+      "id": "cdr-decode-failed-0",
+      "severity": "warning",
+      "title": "CDR decode failures",
+      "detail": "Topic /fix had 1 CDR payload(s) that could not be decoded.",
+      "topic": "/fix",
+      "timeBasis": "record_time",
+      "evidence": {
+        "decodedPayloads": 1,
+        "decodeErrors": 1
+      }
+    },
+    {
+      "id": "stream-large-gap-2",
+      "severity": "warning",
+      "title": "Large timestamp gap",
+      "detail": "Topic /scan has a maximum inter-message gap of 6 s.",
+      "topic": "/scan",
+      "timeBasis": "record_time",
+      "evidence": {
+        "maxGapNs": 6000000000
+      }
+    }
+  ]
+}

@@ -2,9 +2,12 @@
 
 Checked-in `ResultBundle` examples for docs and regression checks.
 
-- [`sample_rosbag.result.json`](sample_rosbag.result.json) — single `.db3` segment with `/odom` and `/fix`, used in the README example output section.
+| File | Purpose |
+| --- | --- |
+| [`sample_rosbag.result.json`](sample_rosbag.result.json) | Clean bag with `/odom` and `/fix`; all stream checks pass |
+| [`sample_rosbag_with_findings.result.json`](sample_rosbag_with_findings.result.json) | Bag that triggers count mismatch, CDR decode failure, and large gap findings |
 
-Regenerate with:
+Regenerate both with:
 
 ```bash
 UPDATE_GOLDEN=1 pnpm --filter @bagdrop/web exec vitest run tests/export_golden_result.test.ts

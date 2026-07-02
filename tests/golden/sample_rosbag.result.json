@@ -52,7 +52,7 @@
         "meanRateHz": null,
         "maxGapNs": null,
         "status": "ok",
-        "decodedPayloads": 0,
+        "decodedPayloads": 1,
         "decodeErrors": 0
       },
       {

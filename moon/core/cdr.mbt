@@ -103,6 +103,24 @@ fn CdrReader::skip_doubles(self : CdrReader, count : Int) -> Bool {
 }
 
 ///|
+fn CdrReader::skip_u8(self : CdrReader) -> Bool {
+  if !self.can_read(1) {
+    return false
+  }
+  self.offset = self.offset + 1
+  true
+}
+
+///|
+fn CdrReader::skip_u16(self : CdrReader) -> Bool {
+  if !self.align(2) || !self.can_read(2) {
+    return false
+  }
+  self.offset = self.offset + 2
+  true
+}
+
+///|
 pub fn decode_std_msgs_float64(payload : Bytes) -> Double? {
   if !is_cdr_le(payload) || payload.length() != 16 {
     return None
@@ -127,15 +145,34 @@ pub fn validate_nav_msgs_odometry(payload : Bytes) -> Bool {
 }
 
 ///|
+pub fn validate_sensor_msgs_nav_sat_fix(payload : Bytes) -> Bool {
+  if !is_cdr_le(payload) {
+    return false
+  }
+  let reader = CdrReader::new(payload)
+  reader.skip_encapsulation() &&
+  reader.skip_header_stamp() &&
+  reader.skip_string() &&
+  reader.skip_u8() &&
+  reader.skip_u16() &&
+  reader.skip_doubles(3) &&
+  reader.skip_doubles(9) &&
+  reader.skip_u8()
+}
+
+///|
 pub fn validate_known_cdr_payload(topic_type : String, payload : Bytes) -> Bool {
   match topic_type {
     "std_msgs/msg/Float64" => decode_std_msgs_float64(payload) is Some(_)
     "nav_msgs/msg/Odometry" => validate_nav_msgs_odometry(payload)
+    "sensor_msgs/msg/NavSatFix" => validate_sensor_msgs_nav_sat_fix(payload)
     _ => false
   }
 }
 
 ///|
 pub fn has_cdr_decoder(topic_type : String) -> Bool {
-  topic_type == "std_msgs/msg/Float64" || topic_type == "nav_msgs/msg/Odometry"
+  topic_type == "std_msgs/msg/Float64" ||
+  topic_type == "nav_msgs/msg/Odometry" ||
+  topic_type == "sensor_msgs/msg/NavSatFix"
 }

@@ -1,25 +1,34 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { createExampleResultBundle } from "./fixtures/rosbag_like";
+import { createExampleResultBundle, createFindingsResultBundle } from "./fixtures/result_bundle";
 
-const goldenPath = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../../../tests/golden/sample_rosbag.result.json"
-);
+const goldenDir = join(import.meta.dirname, "../../../tests/golden");
 
-describe("golden result", () => {
-  it("matches the checked-in sample ResultBundle", async () => {
-    const bundle = await createExampleResultBundle();
-    bundle.createdAt = "2026-07-02T10:00:00.000Z";
+const goldenFiles = [
+  {
+    name: "sample_rosbag.result.json",
+    create: createExampleResultBundle
+  },
+  {
+    name: "sample_rosbag_with_findings.result.json",
+    create: createFindingsResultBundle
+  }
+] as const;
 
-    if (process.env.UPDATE_GOLDEN === "1") {
-      mkdirSync(dirname(goldenPath), { recursive: true });
-      writeFileSync(goldenPath, `${JSON.stringify(bundle, null, 2)}\n`, "utf8");
-    }
+describe("golden results", () => {
+  for (const golden of goldenFiles) {
+    it(`matches ${golden.name}`, async () => {
+      const bundle = await golden.create();
+      bundle.createdAt = "2026-07-02T10:00:00.000Z";
+      const goldenPath = join(goldenDir, golden.name);
 
-    const golden = JSON.parse(readFileSync(goldenPath, "utf8"));
-    expect(bundle).toEqual(golden);
-  });
+      if (process.env.UPDATE_GOLDEN === "1") {
+        writeFileSync(goldenPath, `${JSON.stringify(bundle, null, 2)}\n`, "utf8");
+      }
+
+      const expected = JSON.parse(readFileSync(goldenPath, "utf8"));
+      expect(bundle).toEqual(expected);
+    });
+  }
 });

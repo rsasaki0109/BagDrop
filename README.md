@@ -8,35 +8,85 @@ The bag Worker scans SQLite catalogs, streams topic timestamps in batches, and f
 
 ## Example Result
 
-Dropping a single rosbag2 SQLite segment (`demo_bag/segment_0.db3`) with two topics produces a local `ResultBundle` like this:
+BagDrop turns a dropped rosbag2 SQLite segment into a local `ResultBundle` without uploading bytes.
 
-### Overview
+```mermaid
+flowchart LR
+  A[Drop .db3] --> B[Inventory]
+  B --> C[SQLite catalog]
+  C --> D[Stream scan]
+  D --> E[MoonBit core]
+  E --> F[Overview + Findings + JSON export]
 
-| Metric | Value |
+  style F fill:#1f2b26,stroke:#6fae92,color:#e7f2ec
+```
+
+### Clean bag
+
+[`sample_rosbag.result.json`](tests/golden/sample_rosbag.result.json) — `demo_bag/segment_0.db3`
+
+| | |
 | --- | --- |
-| Files | 1 |
-| SQLite segments | 1 |
-| Messages | 4 |
-| Topics | 2 |
-| Storage status | `ready` |
-| Findings | 0 |
+| **Overview** | 4 messages · 2 topics · `ready` · **0 findings** |
+| **Backend** | MoonBit `wasm` |
 
-### Topics
+**Topics**
 
-| Topic | Type | Count | Mean rate | Max gap | CDR | Status |
-| --- | --- | ---: | --- | --- | --- | --- |
-| `/fix` | `sensor_msgs/msg/NavSatFix` | 1 | N/A | N/A | No payloads | `ok` |
-| `/odom` | `nav_msgs/msg/Odometry` | 3 | 1.5 Hz | 1 s | 3 ok | `ok` |
+| Topic | Type | Count | Rate | Max gap | CDR | Status |
+| --- | --- | ---: | --- | --- | --- | :---: |
+| `/fix` | `sensor_msgs/msg/NavSatFix` | 1 | N/A | N/A | **1 ok** | ok |
+| `/odom` | `nav_msgs/msg/Odometry` | 3 | 1.5 Hz | 1 s | **3 ok** | ok |
 
-Stream analysis verifies catalog counts, computes refined rates and gaps, and validates known CDR payloads. In this sample, all three `/odom` messages decode successfully as `nav_msgs/msg/Odometry`.
+**Findings panel**
 
-### Findings
+```text
+(no findings)
+```
 
-No findings for this clean sample bag.
+Both GNSS and odometry payloads decode successfully. This is the “all green” path.
 
-### Export
+### Bag with findings
 
-The full JSON export is checked in as [`tests/golden/sample_rosbag.result.json`](tests/golden/sample_rosbag.result.json). Regenerate it with:
+[`sample_rosbag_with_findings.result.json`](tests/golden/sample_rosbag_with_findings.result.json) — `demo_bag/findings_segment_0.db3`
+
+| | |
+| --- | --- |
+| **Overview** | 6 messages · 3 topics · `ready` · **3 findings** |
+| **Summary** | `1 error · 2 warnings` |
+
+**Topics**
+
+| Topic | Type | CDR | Status | Why |
+| --- | --- | --- | :---: | --- |
+| `/fix` | `NavSatFix` | 1/2 ok | error | catalog says 5 msgs, stream found 2; 1 bad payload |
+| `/odom` | `Odometry` | 2 ok | ok | baseline healthy topic |
+| `/scan` | `LaserScan` | N/A | warning | 6 s gap between messages |
+
+**Findings panel (as shown in the UI)**
+
+```text
+┌─ ERROR ─ Stream ─────────────────────────────────────────────┐
+│ Stream count mismatch                                        │
+│ Topic /fix streamed 2 messages, but catalog reported 5.      │
+│ /fix · streamedCount=2 · catalogCount=5                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌─ WARNING ─ Stream ───────────────────────────────────────────┐
+│ CDR decode failures                                          │
+│ Topic /fix had 1 payload that could not be decoded.          │
+│ /fix · decodedPayloads=1 · decodeErrors=1                    │
+└──────────────────────────────────────────────────────────────┘
+
+┌─ WARNING ─ Stream ───────────────────────────────────────────┐
+│ Large timestamp gap                                          │
+│ Topic /scan has a maximum inter-message gap of 6 s.          │
+│ /scan · maxGapNs=6000000000                                  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+Try it live: drop a bag at https://rsasaki0109.github.io/BagDrop/ — findings appear in the right-hand panel with severity pills, topic badges, and evidence rows.
+
+### Regenerate golden exports
 
 ```bash
 UPDATE_GOLDEN=1 pnpm --filter @bagdrop/web exec vitest run tests/export_golden_result.test.ts
