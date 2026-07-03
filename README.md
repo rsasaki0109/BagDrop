@@ -19,7 +19,7 @@ Regenerate with `pnpm --filter @bagdrop/web record:demo` (requires Playwright Ch
 
 - **Topics filter** — search by topic name or message type; the table shows a `matched / total` count.
 - **Findings panel** — grouped by category (`Stream`, `Diagnostics`, …) with severity pills, topic badges, and evidence rows. Click a topic badge to jump to that row and open its plot.
-- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types and derived Imu/TwistStamped/LaserScan metrics; **Range** for LaserScan profiles; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
+- **Topic plots** — tabs depend on message type: intervals for every topic; **Value** for scalar types and derived Imu/TwistStamped/TwistWithCovarianceStamped/LaserScan metrics; **Angular** for Imu `|ω|` and twist `angular.z`; **Range** for LaserScan profiles; **XY trajectory** for pose, odometry, and path topics; **Lat/Lon** for NavSatFix.
 - **CDR column** — per-topic decode success counts from MoonBit validation. See [docs/supported-types.md](docs/supported-types.md) for the full list of supported message types.
 
 ## Example Result
@@ -73,10 +73,10 @@ Select a topic row to open the plot panel below the Topics table. Use the filter
 
 | Topic | Tabs |
 | --- | --- |
-| `/cmd_vel` | **Intervals** · Value (`linear.x`) |
+| `/cmd_vel` | **Intervals** · Value (`linear.x`) · Angular (`angular.z`) |
 | `/odom` | **Intervals** · XY trajectory |
 | `/fix` | **Intervals** · Lat/Lon |
-| `/imu` | **Intervals** · Value (`|linear acceleration|`) |
+| `/imu` | **Intervals** · Value (`|linear acceleration|`) · Angular (`|ω|`) |
 | `/temperature` | **Intervals** · Value |
 
 ```text
@@ -158,6 +158,8 @@ The findings GIF uses the same synthetic `.db3` shape as the golden export. Live
 ```bash
 UPDATE_GOLDEN=1 pnpm --filter @bagdrop/web exec vitest run tests/export_golden_result.test.ts
 ```
+
+Each topic in the exported JSON includes a `plotTabs` array (kind, label, description, pointCount) describing which plot tabs the UI supports. The JSON export omits heavy plot series data but keeps this metadata. Exported files also include `exportSchemaVersion` (currently `1`) so downstream tools can detect the slim export shape.
 
 ## Development
 

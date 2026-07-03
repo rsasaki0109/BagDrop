@@ -1,4 +1,4 @@
-import type { ResultBundle, TopicCatalogEntry, WorkerProgress } from "../model/result";
+import type { ResultBundle, TopicCatalogEntry, TopicPlotKind, WorkerProgress } from "../model/result";
 import { drawInventoryChart } from "../charts/inventory_chart";
 import { drawIntervalChart } from "../charts/interval_chart";
 import { drawTrajectoryChart } from "../charts/xy_chart";
@@ -8,9 +8,14 @@ import { drawRangeChart } from "../charts/range_chart";
 import { computeBagHealth, renderBagHealthBadge } from "./bag_health";
 import { renderFindingsPanel, renderFindingsSummary, summarizeFindings } from "./findings_panel";
 import { filterTopics } from "./topic_filter";
+import {
+  buildTopicPlotTabs,
+  describeTopicPlotTab,
+  topicPlotPointCount
+} from "./topic_plot_tabs";
 import { formatBytes, formatNumber } from "../ui/format";
 
-export type TopicPlotKind = "intervals" | "xy" | "latlon" | "value" | "range";
+export type { TopicPlotKind };
 
 export interface AppState {
   status: "idle" | "scanning" | "ready" | "error";
@@ -97,6 +102,8 @@ export function renderApp(root: HTMLElement, state: AppState, actions: AppAction
       const activePlotKind = resolveActivePlotKind(topic, state.selectedPlotKind);
       if (activePlotKind === "value" && topic.valueSeries) {
         drawValueChart(plotCanvas, topic, topic.valueSeries);
+      } else if (activePlotKind === "angular" && topic.angularVelocitySeries) {
+        drawValueChart(plotCanvas, topic, topic.angularVelocitySeries);
       } else if (activePlotKind === "range" && topic.scanProfileSeries) {
         drawRangeChart(plotCanvas, topic, topic.scanProfileSeries);
       } else if (activePlotKind === "latlon" && topic.geopointSeries) {
@@ -356,44 +363,10 @@ function renderTopicPlotPanel(
     return "";
   }
 
-  const intervalCount = topic.intervalSeries?.length ?? 0;
-  const trajectoryCount = topic.trajectorySeries?.length ?? 0;
-  const geopointCount = topic.geopointSeries?.length ?? 0;
-  const valueCount = topic.valueSeries?.length ?? 0;
-  const hasScanProfile = topic.scanProfileSeries !== null && topic.scanProfileSeries !== undefined;
-  const scanPointCount = topic.scanProfileSeries?.ranges.length ?? 0;
-  const hasTrajectory = trajectoryCount > 0;
-  const hasGeopoints = geopointCount > 0;
-  const hasValues = valueCount > 0;
-  const activePlotKind = resolveActivePlotKind(topic, selectedPlotKind);
-  const pointCount =
-    activePlotKind === "range"
-      ? scanPointCount
-      : activePlotKind === "xy"
-      ? trajectoryCount
-      : activePlotKind === "latlon"
-        ? geopointCount
-        : activePlotKind === "value"
-          ? valueCount
-          : intervalCount;
-  const plotCopy =
-    activePlotKind === "range"
-      ? "Latest LaserScan ranges plotted against bearing. Use Value for minimum range over bag time."
-      : activePlotKind === "xy"
-      ? topic.type === "nav_msgs/msg/Path"
-        ? "Path poses projected to x/y. Green marks the first pose and orange marks the last."
-        : "Pose projected to x/y. Green marks the first pose and orange marks the last."
-      : activePlotKind === "latlon"
-        ? "NavSatFix latitude and longitude track. Green marks the first fix and orange marks the last."
-        : activePlotKind === "value"
-          ? topic.type === "sensor_msgs/msg/Imu"
-            ? "|Linear acceleration| (m/s²) over bag time."
-            : topic.type === "geometry_msgs/msg/TwistStamped"
-              ? "Linear x velocity (m/s) over bag time."
-              : topic.type === "sensor_msgs/msg/LaserScan"
-              ? "Minimum valid range per scan over bag time."
-              : `Decoded ${topic.type} values over bag time.`
-          : `Message interval Δt (seconds) vs bag time. Orange line marks the ${formatNumber(5)} s large-gap warning threshold.`;
+  const plotTabs = topic.plotTabs ?? buildTopicPlotTabs(topic);
+  const activePlotKind = resolveActivePlotKind(topic, selectedPlotKind, plotTabs);
+  const pointCount = topicPlotPointCount(topic, activePlotKind);
+  const plotCopy = describeTopicPlotTab(topic, activePlotKind);
 
   return `
     <section class="panel topic-plot-panel">
@@ -402,55 +375,20 @@ function renderTopicPlotPanel(
         <span>${escapeHtml(topic.name)} · ${formatNumber(pointCount)} points</span>
       </div>
       <div class="topic-plot-tabs" role="tablist" aria-label="Topic plot type">
+        ${plotTabs
+          .map(
+            (tab) => `
         <button
-          class="topic-plot-tab ${activePlotKind === "intervals" ? "is-active" : ""}"
+          class="topic-plot-tab ${activePlotKind === tab.kind ? "is-active" : ""}"
           type="button"
           role="tab"
-          aria-selected="${activePlotKind === "intervals" ? "true" : "false"}"
-          data-plot-kind="intervals"
+          aria-selected="${activePlotKind === tab.kind ? "true" : "false"}"
+          data-plot-kind="${tab.kind}"
         >
-          Intervals
-        </button>
-        <button
-          class="topic-plot-tab ${activePlotKind === "value" ? "is-active" : ""} ${hasValues ? "" : "is-disabled"}"
-          type="button"
-          role="tab"
-          aria-selected="${activePlotKind === "value" ? "true" : "false"}"
-          data-plot-kind="value"
-          ${hasValues ? "" : "disabled"}
-        >
-          Value
-        </button>
-        <button
-          class="topic-plot-tab ${activePlotKind === "range" ? "is-active" : ""} ${hasScanProfile ? "" : "is-disabled"}"
-          type="button"
-          role="tab"
-          aria-selected="${activePlotKind === "range" ? "true" : "false"}"
-          data-plot-kind="range"
-          ${hasScanProfile ? "" : "disabled"}
-        >
-          Range
-        </button>
-        <button
-          class="topic-plot-tab ${activePlotKind === "xy" ? "is-active" : ""} ${hasTrajectory ? "" : "is-disabled"}"
-          type="button"
-          role="tab"
-          aria-selected="${activePlotKind === "xy" ? "true" : "false"}"
-          data-plot-kind="xy"
-          ${hasTrajectory ? "" : "disabled"}
-        >
-          XY trajectory
-        </button>
-        <button
-          class="topic-plot-tab ${activePlotKind === "latlon" ? "is-active" : ""} ${hasGeopoints ? "" : "is-disabled"}"
-          type="button"
-          role="tab"
-          aria-selected="${activePlotKind === "latlon" ? "true" : "false"}"
-          data-plot-kind="latlon"
-          ${hasGeopoints ? "" : "disabled"}
-        >
-          Lat/Lon
-        </button>
+          ${escapeHtml(tab.label)}
+        </button>`
+          )
+          .join("")}
       </div>
       <div class="topic-plot-copy">${plotCopy}</div>
       <canvas id="topic-plot-canvas" class="topic-plot-canvas" width="980" height="260" aria-label="Topic plot for ${escapeHtml(topic.name)}"></canvas>
@@ -458,21 +396,21 @@ function renderTopicPlotPanel(
   `;
 }
 
-function resolveActivePlotKind(topic: TopicCatalogEntry, selectedPlotKind: TopicPlotKind): TopicPlotKind {
-  if (selectedPlotKind === "value" && (topic.valueSeries?.length ?? 0) > 0) {
-    return "value";
+function resolveActivePlotKind(
+  topic: TopicCatalogEntry,
+  selectedPlotKind: TopicPlotKind,
+  plotTabs = topic.plotTabs ?? buildTopicPlotTabs(topic)
+): TopicPlotKind {
+  if (plotTabs.some((tab) => tab.kind === selectedPlotKind)) {
+    return selectedPlotKind;
   }
 
-  if (selectedPlotKind === "range" && topic.scanProfileSeries) {
-    return "range";
-  }
-
-  if (selectedPlotKind === "latlon" && (topic.geopointSeries?.length ?? 0) > 0) {
-    return "latlon";
-  }
-
-  if (selectedPlotKind === "xy" && (topic.trajectorySeries?.length ?? 0) > 0) {
+  if (plotTabs.some((tab) => tab.kind === "xy")) {
     return "xy";
+  }
+
+  if (plotTabs.some((tab) => tab.kind === "latlon")) {
+    return "latlon";
   }
 
   return "intervals";
@@ -520,7 +458,7 @@ function bindEvents(root: HTMLElement, state: AppState, actions: AppActions): vo
   for (const tab of root.querySelectorAll<HTMLButtonElement>(".topic-plot-tab:not(.is-disabled)")) {
     tab.addEventListener("click", () => {
       const plotKind = tab.dataset.plotKind;
-      if (plotKind === "intervals" || plotKind === "xy" || plotKind === "latlon" || plotKind === "value" || plotKind === "range") {
+      if (plotKind === "intervals" || plotKind === "xy" || plotKind === "latlon" || plotKind === "value" || plotKind === "angular" || plotKind === "range") {
         actions.onPlotKindSelect(plotKind);
       }
     });

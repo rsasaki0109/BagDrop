@@ -414,6 +414,23 @@ export function decodeGeometryMsgsTwistStampedLinearX(payload: Uint8Array): numb
   return reader.readFloat64();
 }
 
+export function decodeGeometryMsgsTwistStampedAngularZ(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  if (!reader.skipDoubles(5)) {
+    return null;
+  }
+
+  return reader.readFloat64();
+}
+
 export function validateGeometryMsgsTwistWithCovarianceStamped(payload: Uint8Array): boolean {
   if (!isCdrLittleEndian(payload)) {
     return false;
@@ -430,6 +447,36 @@ export function validateGeometryMsgsTwistWithCovarianceStamped(payload: Uint8Arr
     reader.skipDoubles(42) &&
     reader.consumedEntirePayload()
   );
+}
+
+export function decodeGeometryMsgsTwistWithCovarianceStampedLinearX(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  return reader.readFloat64();
+}
+
+export function decodeGeometryMsgsTwistWithCovarianceStampedAngularZ(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  if (!reader.skipDoubles(5)) {
+    return null;
+  }
+
+  return reader.readFloat64();
 }
 
 export function validateDiagnosticMsgsDiagnosticArray(payload: Uint8Array): boolean {
@@ -764,6 +811,30 @@ export function decodeSensorMsgsImuLinearAccelMagnitude(payload: Uint8Array): nu
   return Math.hypot(ax, ay, az);
 }
 
+export function decodeSensorMsgsImuAngularVelocityMagnitude(payload: Uint8Array): number | null {
+  if (!isCdrLittleEndian(payload)) {
+    return null;
+  }
+
+  const reader = new CdrReader(payload);
+  if (!reader.skipEncapsulation() || !reader.skipHeaderStamp() || !reader.skipString()) {
+    return null;
+  }
+
+  if (!reader.skipDoubles(4) || !reader.skipDoubles(9)) {
+    return null;
+  }
+
+  const wx = reader.readFloat64();
+  const wy = reader.readFloat64();
+  const wz = reader.readFloat64();
+  if (wx === null || wy === null || wz === null) {
+    return null;
+  }
+
+  return Math.hypot(wx, wy, wz);
+}
+
 export function hasCdrDecoder(topicType: string): boolean {
   return (
     topicType === "std_msgs/msg/Float32" ||
@@ -900,7 +971,7 @@ export function buildMinimalGeometryMsgsTwistStampedPayload(
 }
 
 export function buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload(
-  twist: { linearX?: number; linearY?: number; linearZ?: number } = {}
+  twist: { linearX?: number; linearY?: number; linearZ?: number; angularX?: number; angularY?: number; angularZ?: number } = {}
 ): Uint8Array {
   const payload = new Uint8Array(360);
   payload.set([0x00, 0x01, 0x00, 0x00], 0);
@@ -911,6 +982,9 @@ export function buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload(
   view.setFloat64(24, twist.linearX ?? 0, true);
   view.setFloat64(32, twist.linearY ?? 0, true);
   view.setFloat64(40, twist.linearZ ?? 0, true);
+  view.setFloat64(48, twist.angularX ?? 0, true);
+  view.setFloat64(56, twist.angularY ?? 0, true);
+  view.setFloat64(64, twist.angularZ ?? 0, true);
 
   return payload;
 }

@@ -69,6 +69,15 @@ export interface TopicScanProfile {
   ranges: number[];
 }
 
+export type TopicPlotKind = "intervals" | "xy" | "latlon" | "value" | "angular" | "range";
+
+export interface TopicPlotTab {
+  kind: TopicPlotKind;
+  label: string;
+  description: string;
+  pointCount: number;
+}
+
 export interface TopicCatalogEntry {
   id: number;
   name: string;
@@ -85,7 +94,9 @@ export interface TopicCatalogEntry {
   trajectorySeries?: TopicTrajectoryPoint[] | null;
   geopointSeries?: TopicGeopoint[] | null;
   valueSeries?: TopicValuePoint[] | null;
+  angularVelocitySeries?: TopicValuePoint[] | null;
   scanProfileSeries?: TopicScanProfile | null;
+  plotTabs?: TopicPlotTab[];
 }
 
 export interface BagCatalog {
@@ -124,6 +135,7 @@ export interface ResultBundle {
   catalog: BagCatalog;
   metrics: Metric[];
   findings: Finding[];
+  exportSchemaVersion?: number;
 }
 
 export interface WorkerProgress {

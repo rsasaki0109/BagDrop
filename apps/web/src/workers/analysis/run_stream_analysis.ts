@@ -11,6 +11,7 @@ import { IntervalSeriesRegistry } from "./interval_series";
 import { ScanProfileSeriesRegistry } from "./scan_profile_series";
 import { TrajectorySeriesRegistry } from "./trajectory_series";
 import { ValueSeriesRegistry } from "./value_series";
+import { attachTopicPlotTabs } from "../../app/topic_plot_tabs";
 
 export interface StreamAnalysisResult {
   topics: TopicCatalogEntry[];
@@ -79,6 +80,7 @@ export async function runStreamAnalysis(
   const trajectorySeriesByTopic = trajectoryRegistry.finalize();
   const geopointSeriesByTopic = geopointRegistry.finalize();
   const valueSeriesByTopic = valueRegistry.finalize();
+  const angularVelocitySeriesByTopic = valueRegistry.finalizeAngularVelocities();
   const scanProfileSeriesByTopic = scanProfileRegistry.finalize();
   const moonbitByTopicName = new Map(moonbitResult.topics.map((topic) => [topic.name, topic]));
   const topics = catalog.topics.map((topic) => {
@@ -87,27 +89,32 @@ export async function runStreamAnalysis(
     const trajectorySeries = trajectorySeriesByTopic.get(topic.name) ?? null;
     const geopointSeries = geopointSeriesByTopic.get(topic.name) ?? null;
     const valueSeries = valueSeriesByTopic.get(topic.name) ?? null;
+    const angularVelocitySeries = angularVelocitySeriesByTopic.get(topic.name) ?? null;
     const scanProfileSeries = scanProfileSeriesByTopic.get(topic.name) ?? null;
 
     if (!moonbitTopic) {
-      return {
+      return attachTopicPlotTabs({
         ...topic,
         intervalSeries,
         trajectorySeries,
         geopointSeries,
         valueSeries,
+        angularVelocitySeries,
         scanProfileSeries
-      };
+      });
     }
 
-    return applyMoonBitStats(
-      topic,
-      moonbitTopic,
-      intervalSeries,
-      trajectorySeries,
-      geopointSeries,
-      valueSeries,
-      scanProfileSeries
+    return attachTopicPlotTabs(
+      applyMoonBitStats(
+        topic,
+        moonbitTopic,
+        intervalSeries,
+        trajectorySeries,
+        geopointSeries,
+        valueSeries,
+        angularVelocitySeries,
+        scanProfileSeries
+      )
     );
   });
 
@@ -151,6 +158,7 @@ function applyMoonBitStats(
   trajectorySeries: TopicCatalogEntry["trajectorySeries"],
   geopointSeries: TopicCatalogEntry["geopointSeries"],
   valueSeries: TopicCatalogEntry["valueSeries"],
+  angularVelocitySeries: TopicCatalogEntry["angularVelocitySeries"],
   scanProfileSeries: TopicCatalogEntry["scanProfileSeries"]
 ): TopicCatalogEntry {
   return {
@@ -164,6 +172,7 @@ function applyMoonBitStats(
     trajectorySeries,
     geopointSeries,
     valueSeries,
+    angularVelocitySeries,
     scanProfileSeries
   };
 }

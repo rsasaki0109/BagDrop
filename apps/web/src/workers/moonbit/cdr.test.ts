@@ -19,8 +19,12 @@ import {
   decodeGeometryMsgsPoseWithCovarianceStampedXY,
   decodeNavMsgsOdometryXY,
   decodeGeometryMsgsTwistStampedLinearX,
+  decodeGeometryMsgsTwistStampedAngularZ,
+  decodeGeometryMsgsTwistWithCovarianceStampedLinearX,
+  decodeGeometryMsgsTwistWithCovarianceStampedAngularZ,
   decodeNavMsgsPathXY,
   decodeSensorMsgsImuLinearAccelMagnitude,
+  decodeSensorMsgsImuAngularVelocityMagnitude,
   decodeSensorMsgsLaserScanMinRange,
   decodeSensorMsgsLaserScanProfile,
   decodeSensorMsgsNavSatFixLatLon,
@@ -108,14 +112,21 @@ describe("cdr", () => {
     expect(validateKnownCdrPayload("geometry_msgs/msg/TwistStamped", payload)).toBe(true);
     expect(validateKnownCdrPayload("geometry_msgs/msg/PoseStamped", payload)).toBe(false);
     expect(decodeGeometryMsgsTwistStampedLinearX(payload)).toBe(0.5);
+    expect(decodeGeometryMsgsTwistStampedAngularZ(payload)).toBe(-0.1);
   });
 
   it("validates geometry_msgs/msg/TwistWithCovarianceStamped payloads", () => {
-    const payload = buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload({ linearX: 1.5, linearY: -0.25 });
+    const payload = buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload({
+      linearX: 1.5,
+      linearY: -0.25,
+      angularZ: 0.75
+    });
 
     expect(payload.length).toBe(360);
     expect(validateGeometryMsgsTwistWithCovarianceStamped(payload)).toBe(true);
     expect(validateKnownCdrPayload("geometry_msgs/msg/TwistWithCovarianceStamped", payload)).toBe(true);
+    expect(decodeGeometryMsgsTwistWithCovarianceStampedLinearX(payload)).toBe(1.5);
+    expect(decodeGeometryMsgsTwistWithCovarianceStampedAngularZ(payload)).toBe(0.75);
   });
 
   it("validates nav_msgs/msg/Odometry payloads", () => {
@@ -189,6 +200,12 @@ describe("cdr", () => {
     const payload = buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 });
 
     expect(decodeSensorMsgsImuLinearAccelMagnitude(payload)).toBe(5);
+  });
+
+  it("decodes sensor_msgs/msg/Imu angular velocity magnitude", () => {
+    const payload = buildMinimalSensorMsgsImuPayload({ wx: 0.3, wy: 0.4, wz: 0 });
+
+    expect(decodeSensorMsgsImuAngularVelocityMagnitude(payload)).toBe(0.5);
   });
 
   it("validates diagnostic_msgs/msg/DiagnosticArray payloads", () => {

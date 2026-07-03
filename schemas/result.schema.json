@@ -6,6 +6,11 @@
   "required": ["appVersion", "createdAt", "catalog", "metrics", "findings"],
   "properties": {
     "appVersion": { "type": "string" },
+    "exportSchemaVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Version of the slim JSON export shape produced by BagDrop downloads and golden fixtures."
+    },
     "createdAt": { "type": "string", "format": "date-time" },
     "catalog": { "type": "object" },
     "metrics": { "type": "array" },

@@ -1,5 +1,7 @@
 import "./styles.css";
-import { renderApp, type AppActions, type AppState, type TopicPlotKind } from "./app/render";
+import { renderApp, type AppActions, type AppState } from "./app/render";
+import type { TopicPlotKind } from "./model/result";
+import { topicSupportsPlotKind } from "./app/topic_plot_tabs";
 import { collectDroppedFiles, filesFromFileList } from "./platform/drop";
 import { BagWorkerClient } from "./workers/worker_client";
 import { downloadResultBundle } from "./report/export";
@@ -71,16 +73,7 @@ const actions: AppActions = {
     let selectedPlotKind = state.selectedPlotKind;
     if (topicName && state.bundle) {
       const topic = state.bundle.catalog.topics.find((entry) => entry.name === topicName);
-      if (selectedPlotKind === "value" && (topic?.valueSeries?.length ?? 0) === 0) {
-        selectedPlotKind = "intervals";
-      }
-      if (selectedPlotKind === "range" && !topic?.scanProfileSeries) {
-        selectedPlotKind = "intervals";
-      }
-      if (selectedPlotKind === "xy" && (topic?.trajectorySeries?.length ?? 0) === 0) {
-        selectedPlotKind = "intervals";
-      }
-      if (selectedPlotKind === "latlon" && (topic?.geopointSeries?.length ?? 0) === 0) {
+      if (topic && selectedPlotKind !== "intervals" && !topicSupportsPlotKind(topic, selectedPlotKind)) {
         selectedPlotKind = "intervals";
       }
     }

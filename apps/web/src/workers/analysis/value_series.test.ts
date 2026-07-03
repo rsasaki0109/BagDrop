@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import { uint8ArrayToBase64 } from "../../platform/base64";
-import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload, buildMinimalGeometryMsgsTwistStampedPayload, buildMinimalSensorMsgsImuPayload, buildMinimalSensorMsgsLaserScanPayload } from "../moonbit/cdr";
+import { buildMinimalStdMsgsFloat32Payload, buildMinimalStdMsgsFloat64Payload, buildMinimalStdMsgsInt32Payload, buildMinimalStdMsgsUInt32Payload, buildMinimalGeometryMsgsTwistStampedPayload, buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload, buildMinimalSensorMsgsImuPayload, buildMinimalSensorMsgsLaserScanPayload } from "../moonbit/cdr";
 import { downsampleValueSeries, ValueSeriesRegistry } from "./value_series";
 
 describe("ValueSeriesRegistry", () => {
@@ -106,6 +106,29 @@ describe("ValueSeriesRegistry", () => {
     expect(registry.finalize().get("/imu")).toEqual([{ timestampNs: 1_000_000_000, value: 5 }]);
   });
 
+  it("extracts sensor_msgs/msg/Imu angular velocity magnitudes", () => {
+    const registry = new ValueSeriesRegistry();
+    const payload = buildMinimalSensorMsgsImuPayload({ wx: 0.3, wy: 0.4, wz: 0 });
+    const batch: TopicMessageBatch = {
+      topicName: "/imu",
+      topicType: "sensor_msgs/msg/Imu",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000, 2_000_000_000],
+      payloadSizesBytes: [payload.length, payload.length],
+      payloadsBase64: [
+        uint8ArrayToBase64(payload),
+        uint8ArrayToBase64(buildMinimalSensorMsgsImuPayload({ wx: 0, wy: 0, wz: 1.2 }))
+      ]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalizeAngularVelocities().get("/imu")).toEqual([
+      { timestampNs: 1_000_000_000, value: 0.5 },
+      { timestampNs: 2_000_000_000, value: 1.2 }
+    ]);
+  });
+
   it("extracts geometry_msgs/msg/TwistStamped linear x values", () => {
     const registry = new ValueSeriesRegistry();
     const payload = buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25 });
@@ -126,6 +149,54 @@ describe("ValueSeriesRegistry", () => {
     expect(registry.finalize().get("/cmd_vel")).toEqual([
       { timestampNs: 1_000_000_000, value: 1.25 },
       { timestampNs: 2_000_000_000, value: 0.75 }
+    ]);
+  });
+
+  it("extracts geometry_msgs/msg/TwistStamped angular z values", () => {
+    const registry = new ValueSeriesRegistry();
+    const batch: TopicMessageBatch = {
+      topicName: "/cmd_vel",
+      topicType: "geometry_msgs/msg/TwistStamped",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000, 2_000_000_000],
+      payloadSizesBytes: [72, 72],
+      payloadsBase64: [
+        uint8ArrayToBase64(buildMinimalGeometryMsgsTwistStampedPayload({ angularZ: -0.2 })),
+        uint8ArrayToBase64(buildMinimalGeometryMsgsTwistStampedPayload({ angularZ: 0.35 }))
+      ]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalizeAngularVelocities().get("/cmd_vel")).toEqual([
+      { timestampNs: 1_000_000_000, value: -0.2 },
+      { timestampNs: 2_000_000_000, value: 0.35 }
+    ]);
+  });
+
+  it("extracts geometry_msgs/msg/TwistWithCovarianceStamped linear x and angular z values", () => {
+    const registry = new ValueSeriesRegistry();
+    const batch: TopicMessageBatch = {
+      topicName: "/velocity",
+      topicType: "geometry_msgs/msg/TwistWithCovarianceStamped",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000, 2_000_000_000],
+      payloadSizesBytes: [360, 360],
+      payloadsBase64: [
+        uint8ArrayToBase64(buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload({ linearX: 1.5, angularZ: 0.75 })),
+        uint8ArrayToBase64(buildMinimalGeometryMsgsTwistWithCovarianceStampedPayload({ linearX: 0.25, angularZ: -0.1 }))
+      ]
+    };
+
+    registry.consumeBatch(batch);
+
+    expect(registry.finalize().get("/velocity")).toEqual([
+      { timestampNs: 1_000_000_000, value: 1.5 },
+      { timestampNs: 2_000_000_000, value: 0.25 }
+    ]);
+    expect(registry.finalizeAngularVelocities().get("/velocity")).toEqual([
+      { timestampNs: 1_000_000_000, value: 0.75 },
+      { timestampNs: 2_000_000_000, value: -0.1 }
     ]);
   });
 

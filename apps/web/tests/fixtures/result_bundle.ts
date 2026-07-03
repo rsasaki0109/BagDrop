@@ -115,10 +115,10 @@ async function buildResultBundleFromDb(
 async function createRosbagLikeDb(): Promise<Uint8Array> {
   const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload());
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload());
-  const imuPayloadLow = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 }));
-  const imuPayloadHigh = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 0, ay: 0, az: 9.8 }));
-  const cmdVelPayloadLow = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.5 }));
-  const cmdVelPayloadHigh = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25 }));
+  const imuPayloadLow = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ wx: 0.3, wy: 0.4, wz: 0, ax: 3, ay: 4, az: 0 }));
+  const imuPayloadHigh = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ wx: 0, wy: 0, wz: 1.2, ax: 0, ay: 0, az: 9.8 }));
+  const cmdVelPayloadLow = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.5, angularZ: -0.2 }));
+  const cmdVelPayloadHigh = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25, angularZ: 0.35 }));
   const tempPayload42 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(42));
   const tempPayload43 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(43));
   const tempPayload44 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(44));

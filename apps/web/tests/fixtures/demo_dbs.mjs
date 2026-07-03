@@ -191,10 +191,10 @@ async function createRosbagDb(topicAndMessageSql) {
 export async function createCleanDemoDb() {
   const odomPayload = sqliteBlobLiteral(buildMinimalNavMsgsOdometryPayload({ x: 1, y: 2 }));
   const fixPayload = sqliteBlobLiteral(buildMinimalSensorMsgsNavSatFixPayload({ lat: 35.6, lon: 139.7 }));
-  const imuPayloadLow = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 3, ay: 4, az: 0 }));
-  const imuPayloadHigh = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ ax: 0, ay: 0, az: 9.8 }));
-  const cmdVelPayloadLow = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.5 }));
-  const cmdVelPayloadHigh = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25 }));
+  const imuPayloadLow = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ wx: 0.3, wy: 0.4, wz: 0, ax: 3, ay: 4, az: 0 }));
+  const imuPayloadHigh = sqliteBlobLiteral(buildMinimalSensorMsgsImuPayload({ wx: 0, wy: 0, wz: 1.2, ax: 0, ay: 0, az: 9.8 }));
+  const cmdVelPayloadLow = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 0.5, angularZ: -0.2 }));
+  const cmdVelPayloadHigh = sqliteBlobLiteral(buildMinimalGeometryMsgsTwistStampedPayload({ linearX: 1.25, angularZ: 0.35 }));
   const tempPayload42 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(42));
   const tempPayload43 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(43));
   const tempPayload44 = sqliteBlobLiteral(buildMinimalStdMsgsFloat64Payload(44));

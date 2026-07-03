@@ -53,7 +53,27 @@
         "maxGapNs": 400000000,
         "status": "ok",
         "decodedPayloads": 2,
-        "decodeErrors": 0
+        "decodeErrors": 0,
+        "plotTabs": [
+          {
+            "kind": "intervals",
+            "label": "Intervals",
+            "description": "Message interval Δt (seconds) vs bag time. Orange line marks the 5 s large-gap warning threshold.",
+            "pointCount": 1
+          },
+          {
+            "kind": "value",
+            "label": "Value",
+            "description": "Linear x velocity (m/s) over bag time.",
+            "pointCount": 2
+          },
+          {
+            "kind": "angular",
+            "label": "Angular",
+            "description": "Angular z (rad/s) over bag time.",
+            "pointCount": 2
+          }
+        ]
       },
       {
         "id": 1,
@@ -69,7 +89,21 @@
         "maxGapNs": null,
         "status": "ok",
         "decodedPayloads": 1,
-        "decodeErrors": 0
+        "decodeErrors": 0,
+        "plotTabs": [
+          {
+            "kind": "intervals",
+            "label": "Intervals",
+            "description": "Message interval Δt (seconds) vs bag time. Orange line marks the 5 s large-gap warning threshold.",
+            "pointCount": 0
+          },
+          {
+            "kind": "latlon",
+            "label": "Lat/Lon",
+            "description": "NavSatFix latitude and longitude track. Green marks the first fix and orange marks the last.",
+            "pointCount": 1
+          }
+        ]
       },
       {
         "id": 2,
@@ -85,7 +119,27 @@
         "maxGapNs": 800000000,
         "status": "ok",
         "decodedPayloads": 2,
-        "decodeErrors": 0
+        "decodeErrors": 0,
+        "plotTabs": [
+          {
+            "kind": "intervals",
+            "label": "Intervals",
+            "description": "Message interval Δt (seconds) vs bag time. Orange line marks the 5 s large-gap warning threshold.",
+            "pointCount": 1
+          },
+          {
+            "kind": "value",
+            "label": "Value",
+            "description": "|Linear acceleration| (m/s²) over bag time.",
+            "pointCount": 2
+          },
+          {
+            "kind": "angular",
+            "label": "Angular",
+            "description": "|Angular velocity| (rad/s) over bag time.",
+            "pointCount": 2
+          }
+        ]
       },
       {
         "id": 3,
@@ -101,7 +155,21 @@
         "maxGapNs": 1000000000,
         "status": "ok",
         "decodedPayloads": 3,
-        "decodeErrors": 0
+        "decodeErrors": 0,
+        "plotTabs": [
+          {
+            "kind": "intervals",
+            "label": "Intervals",
+            "description": "Message interval Δt (seconds) vs bag time. Orange line marks the 5 s large-gap warning threshold.",
+            "pointCount": 2
+          },
+          {
+            "kind": "xy",
+            "label": "XY trajectory",
+            "description": "Pose projected to x/y. Green marks the first pose and orange marks the last.",
+            "pointCount": 3
+          }
+        ]
       },
       {
         "id": 4,
@@ -117,7 +185,21 @@
         "maxGapNs": 700000000,
         "status": "ok",
         "decodedPayloads": 3,
-        "decodeErrors": 0
+        "decodeErrors": 0,
+        "plotTabs": [
+          {
+            "kind": "intervals",
+            "label": "Intervals",
+            "description": "Message interval Δt (seconds) vs bag time. Orange line marks the 5 s large-gap warning threshold.",
+            "pointCount": 2
+          },
+          {
+            "kind": "value",
+            "label": "Value",
+            "description": "Decoded std_msgs/msg/Float64 values over bag time.",
+            "pointCount": 3
+          }
+        ]
       }
     ],
     "messageCount": 11,
@@ -171,5 +253,6 @@
       "value": 5
     }
   ],
-  "findings": []
+  "findings": [],
+  "exportSchemaVersion": 1
 }
