@@ -51,6 +51,25 @@ test "consume batch decodes std_msgs float64 payloads" {
   }
   inspect(topic.payloads_decoded, content="1")
   inspect(topic.decode_errors, content="0")
+  inspect(topic.value_series.length(), content="1")
+  inspect(topic.value_series[0].timestamp_ns, content="1000000000")
+}
+
+///|
+test "finish emits valueSeries for decoded float64 payloads" {
+  let state = CoreState::new()
+  ignore(state.register_topic_json(
+    @utf8.encode(
+      "{\"v\":1,\"catalogId\":1,\"name\":\"/temperature\",\"type\":\"std_msgs/msg/Float64\",\"serializationFormat\":\"cdr\",\"catalogCount\":1}",
+    ),
+  ))
+  ignore(state.consume_batch_json(
+    @utf8.encode(
+      "{\"v\":1,\"topicName\":\"/temperature\",\"topicType\":\"std_msgs/msg/Float64\",\"serializationFormat\":\"cdr\",\"timestampsNs\":[1000000000],\"payloadSizesBytes\":[16],\"payloadsBase64\":[\"AAEAAAAAAAAAAAAAAABFQA==\"]}",
+    ),
+  ))
+  let result = state.to_result_json()
+  assert_true(result.contains("\"valueSeries\":[{\"timestampNs\":1000000000"))
 }
 
 ///|

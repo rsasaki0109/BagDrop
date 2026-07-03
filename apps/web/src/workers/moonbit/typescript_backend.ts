@@ -1,7 +1,13 @@
 import type { TopicMessageBatch } from "../../model/message_batch";
-import type { TopicCatalogEntry } from "../../model/result";
+import type { TopicCatalogEntry, TopicValuePoint } from "../../model/result";
 import { base64ToUint8Array } from "../../platform/base64";
 import { validateKnownCdrPayload, hasCdrDecoder } from "./cdr";
+import {
+  decodeAngularVelocityValue,
+  decodePrimaryValue,
+  downsampleValueSeries,
+  VALUE_SERIES_MAX_POINTS
+} from "../analysis/value_series";
 import {
   buildStreamFindings,
   topicStatusFromSnapshot,
@@ -25,6 +31,8 @@ interface TopicAccumulator {
   previousTimestampNs: number | null;
   decodedPayloads: number;
   decodeErrors: number;
+  valueSeries: TopicValuePoint[];
+  angularVelocitySeries: TopicValuePoint[];
 }
 
 export class TypeScriptMoonBitCoreBackend implements MoonBitCoreBackend {
@@ -54,7 +62,9 @@ export class TypeScriptMoonBitCoreBackend implements MoonBitCoreBackend {
       maxGapNs: null,
       previousTimestampNs: null,
       decodedPayloads: 0,
-      decodeErrors: 0
+      decodeErrors: 0,
+      valueSeries: [],
+      angularVelocitySeries: []
     });
     return MOONBIT_CORE_STATUS_OK;
   }
@@ -95,10 +105,22 @@ export class TypeScriptMoonBitCoreBackend implements MoonBitCoreBackend {
         continue;
       }
 
+      const timestampNs = batch.timestampsNs[index] ?? batch.timestampsNs[batch.timestampsNs.length - 1];
+
       try {
         const payload = base64ToUint8Array(encodedPayload);
         if (validateKnownCdrPayload(batch.topicType, payload)) {
           topic.decodedPayloads += 1;
+
+          const primaryValue = decodePrimaryValue(batch.topicType, payload);
+          if (primaryValue !== null) {
+            topic.valueSeries.push({ timestampNs, value: primaryValue });
+          }
+
+          const angularValue = decodeAngularVelocityValue(batch.topicType, payload);
+          if (angularValue !== null) {
+            topic.angularVelocitySeries.push({ timestampNs, value: angularValue });
+          }
         } else {
           topic.decodeErrors += 1;
         }
@@ -182,6 +204,17 @@ function toTopicResult(topic: TopicAccumulator): MoonBitTopicResult {
       durationSeconds && durationSeconds > 0 ? snapshot.messageCount / durationSeconds : null,
     status: topicStatusFromSnapshot(snapshot),
     decodedPayloads: topic.decodedPayloads,
-    decodeErrors: topic.decodeErrors
+    decodeErrors: topic.decodeErrors,
+    ...(topic.valueSeries.length > 0
+      ? { valueSeries: downsampleValueSeries(topic.valueSeries, VALUE_SERIES_MAX_POINTS) }
+      : {}),
+    ...(topic.angularVelocitySeries.length > 0
+      ? {
+          angularVelocitySeries: downsampleValueSeries(
+            topic.angularVelocitySeries,
+            VALUE_SERIES_MAX_POINTS
+          )
+        }
+      : {})
   };
 }

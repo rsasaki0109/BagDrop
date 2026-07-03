@@ -10,7 +10,7 @@ import { GeopointSeriesRegistry } from "./geopoint_series";
 import { IntervalSeriesRegistry } from "./interval_series";
 import { ScanProfileSeriesRegistry } from "./scan_profile_series";
 import { TrajectorySeriesRegistry } from "./trajectory_series";
-import { ValueSeriesRegistry } from "./value_series";
+import { ValueSeriesRegistry, downsampleValueSeries, VALUE_SERIES_MAX_POINTS } from "./value_series";
 import { attachTopicPlotTabs } from "../../app/topic_plot_tabs";
 
 export interface StreamAnalysisResult {
@@ -171,8 +171,19 @@ function applyMoonBitStats(
     intervalSeries,
     trajectorySeries,
     geopointSeries,
-    valueSeries,
-    angularVelocitySeries,
+    valueSeries: preferMoonBitValueSeries(moonbitTopic.valueSeries, valueSeries),
+    angularVelocitySeries: preferMoonBitValueSeries(moonbitTopic.angularVelocitySeries, angularVelocitySeries),
     scanProfileSeries
   };
+}
+
+function preferMoonBitValueSeries(
+  moonbitSeries: MoonBitTopicResult["valueSeries"],
+  fallback: TopicCatalogEntry["valueSeries"]
+): TopicCatalogEntry["valueSeries"] {
+  if (moonbitSeries && moonbitSeries.length > 0) {
+    return downsampleValueSeries(moonbitSeries, VALUE_SERIES_MAX_POINTS);
+  }
+
+  return fallback;
 }

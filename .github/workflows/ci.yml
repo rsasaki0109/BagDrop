@@ -22,6 +22,9 @@ jobs:
         run: echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - run: pnpm build:moon-core
       - run: pnpm typecheck
+      - name: Validate golden exports against JSON Schema
+        run: pnpm exec vitest run tests/validate_golden_schema.test.ts
+        working-directory: apps/web
       - run: pnpm test
       - run: pnpm exec playwright install chromium --with-deps
         working-directory: apps/web

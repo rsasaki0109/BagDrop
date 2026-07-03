@@ -1,5 +1,7 @@
 # BagDrop
 
+[![CI](https://github.com/rsasaki0109/BagDrop/actions/workflows/ci.yml/badge.svg)](https://github.com/rsasaki0109/BagDrop/actions/workflows/ci.yml)
+
 BagDrop is a local-first ROS 2 bag diagnostic tool. It accepts a bag directory or `.db3` file in the browser, produces a fast overview, and runs targeted deterministic analysis without uploading bag data.
 
 The bag Worker scans SQLite catalogs, streams topic timestamps in batches, and feeds them to the MoonBit analysis core. Official SQLite Wasm handles database access; MoonBit Wasm owns stream verification findings, topic statistics, and starter CDR validation.

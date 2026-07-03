@@ -1,4 +1,4 @@
-import type { Finding } from "../../model/result";
+import type { Finding, TopicValuePoint } from "../../model/result";
 import type { TopicMessageBatch } from "../../model/message_batch";
 import {
   MOONBIT_BATCH_CODEC_VERSION,
@@ -147,7 +147,13 @@ function asTopicResults(value: unknown): MoonBitTopicResult[] {
         meanRateHz: asNullableFiniteNumber(topic.meanRateHz),
         status: asTopicStatus(topic.status),
         decodedPayloads: asFiniteNumber(topic.decodedPayloads) ?? 0,
-        decodeErrors: asFiniteNumber(topic.decodeErrors) ?? 0
+        decodeErrors: asFiniteNumber(topic.decodeErrors) ?? 0,
+        ...(asValuePoints(topic.valueSeries).length > 0
+          ? { valueSeries: asValuePoints(topic.valueSeries) }
+          : {}),
+        ...(asValuePoints(topic.angularVelocitySeries).length > 0
+          ? { angularVelocitySeries: asValuePoints(topic.angularVelocitySeries) }
+          : {})
       };
     })
     .filter((entry): entry is MoonBitTopicResult => entry !== null);
@@ -214,4 +220,28 @@ function asOptionalTimeBasis(value: unknown): Finding["timeBasis"] | undefined {
 
 function asTopicStatus(value: unknown): MoonBitTopicResult["status"] {
   return value === "warning" || value === "error" ? value : "ok";
+}
+
+function asValuePoints(value: unknown): TopicValuePoint[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const points: TopicValuePoint[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+
+    const point = entry as Record<string, unknown>;
+    const timestampNs = asFiniteNumber(point.timestampNs);
+    const scalar = asFiniteNumber(point.value);
+    if (timestampNs === null || scalar === null) {
+      continue;
+    }
+
+    points.push({ timestampNs, value: scalar });
+  }
+
+  return points;
 }

@@ -18,7 +18,7 @@ const VALUE_TOPIC_TYPES = new Set([
   "sensor_msgs/msg/LaserScan"
 ]);
 
-function decodeScalarValue(topicType: string, payload: Uint8Array): number | null {
+export function decodePrimaryValue(topicType: string, payload: Uint8Array): number | null {
   if (topicType === "std_msgs/msg/Float64") {
     return decodeStdMsgsFloat64(payload);
   }
@@ -49,6 +49,22 @@ function decodeScalarValue(topicType: string, payload: Uint8Array): number | nul
 
   if (topicType === "sensor_msgs/msg/LaserScan") {
     return decodeSensorMsgsLaserScanMinRange(payload);
+  }
+
+  return null;
+}
+
+export function decodeAngularVelocityValue(topicType: string, payload: Uint8Array): number | null {
+  if (topicType === "sensor_msgs/msg/Imu") {
+    return decodeSensorMsgsImuAngularVelocityMagnitude(payload);
+  }
+
+  if (topicType === "geometry_msgs/msg/TwistStamped") {
+    return decodeGeometryMsgsTwistStampedAngularZ(payload);
+  }
+
+  if (topicType === "geometry_msgs/msg/TwistWithCovarianceStamped") {
+    return decodeGeometryMsgsTwistWithCovarianceStampedAngularZ(payload);
   }
 
   return null;
@@ -88,7 +104,7 @@ class ValueSeriesCollector {
 
       try {
         const payload = base64ToUint8Array(encodedPayload);
-        const value = decodeScalarValue(batch.topicType, payload);
+        const value = decodePrimaryValue(batch.topicType, payload);
         if (value !== null) {
           this.points.push({
             timestampNs: batch.timestampsNs[index],
@@ -110,16 +126,11 @@ class AngularSeriesCollector {
   private readonly points: TopicValuePoint[] = [];
 
   consumeBatch(batch: TopicMessageBatch): void {
-    const decodeAngularValue =
-      batch.topicType === "sensor_msgs/msg/Imu"
-        ? decodeSensorMsgsImuAngularVelocityMagnitude
-        : batch.topicType === "geometry_msgs/msg/TwistStamped"
-          ? decodeGeometryMsgsTwistStampedAngularZ
-          : batch.topicType === "geometry_msgs/msg/TwistWithCovarianceStamped"
-            ? decodeGeometryMsgsTwistWithCovarianceStampedAngularZ
-            : null;
-
-    if (!decodeAngularValue) {
+    if (
+      batch.topicType !== "sensor_msgs/msg/Imu" &&
+      batch.topicType !== "geometry_msgs/msg/TwistStamped" &&
+      batch.topicType !== "geometry_msgs/msg/TwistWithCovarianceStamped"
+    ) {
       return;
     }
 
@@ -131,7 +142,7 @@ class AngularSeriesCollector {
 
       try {
         const payload = base64ToUint8Array(encodedPayload);
-        const value = decodeAngularValue(payload);
+        const value = decodeAngularVelocityValue(batch.topicType, payload);
         if (value !== null) {
           this.points.push({
             timestampNs: batch.timestampsNs[index],

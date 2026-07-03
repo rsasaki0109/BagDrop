@@ -11,6 +11,8 @@ pub(all) struct TopicState {
   mut previous_timestamp_ns : Int64?
   mut payloads_decoded : Int
   mut decode_errors : Int
+  mut value_series : Array[ValuePoint]
+  mut angular_velocity_series : Array[ValuePoint]
 }
 
 ///|
@@ -45,6 +47,8 @@ pub fn CoreState::register_topic(
     previous_timestamp_ns: None,
     payloads_decoded: 0,
     decode_errors: 0,
+    value_series: [],
+    angular_velocity_series: [],
   }
 }
 
@@ -81,11 +85,22 @@ pub fn CoreState::consume_timestamp(
 pub fn CoreState::consume_cdr_payload(
   self : CoreState,
   topic_name : String,
+  timestamp_ns : Int64,
   payload : Bytes,
 ) -> Unit {
   guard self.topics.get(topic_name) is Some(topic) else { return }
   if validate_known_cdr_payload(topic.type_name, payload) {
     topic.payloads_decoded = topic.payloads_decoded + 1
+    match extract_primary_value(topic.type_name, payload) {
+      Some(value) =>
+        topic.value_series.push({ timestamp_ns, value })
+      None => ()
+    }
+    match extract_angular_value(topic.type_name, payload) {
+      Some(value) =>
+        topic.angular_velocity_series.push({ timestamp_ns, value })
+      None => ()
+    }
   } else {
     topic.decode_errors = topic.decode_errors + 1
   }

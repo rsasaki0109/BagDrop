@@ -1,4 +1,4 @@
-import type { Finding } from "../../model/result";
+import type { Finding, TopicValuePoint } from "../../model/result";
 import type { TopicMessageBatch } from "../../model/message_batch";
 
 export const MOONBIT_BATCH_CODEC_VERSION = 1;
@@ -24,6 +24,8 @@ export interface MoonBitTopicResult {
   status: "ok" | "warning" | "error";
   decodedPayloads: number;
   decodeErrors: number;
+  valueSeries?: TopicValuePoint[];
+  angularVelocitySeries?: TopicValuePoint[];
 }
 
 export interface MoonBitAnalysisResult {

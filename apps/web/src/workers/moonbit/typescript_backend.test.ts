@@ -43,6 +43,36 @@ describe("TypeScriptMoonBitCoreBackend", () => {
     expect(result.findings).toEqual([]);
   });
 
+  it("extracts valueSeries from decoded float64 payloads", () => {
+    const backend = new TypeScriptMoonBitCoreBackend();
+    const handle = backend.create({ timeBasis: "record_time" });
+
+    expect(
+      backend.registerTopic(handle, {
+        catalogId: 1,
+        name: "/temperature",
+        type: "std_msgs/msg/Float64",
+        serializationFormat: "cdr",
+        catalogCount: 1
+      })
+    ).toBe(0);
+
+    consume(backend, handle, {
+      topicName: "/temperature",
+      topicType: "std_msgs/msg/Float64",
+      serializationFormat: "cdr",
+      timestampsNs: [1_000_000_000],
+      payloadSizesBytes: [16],
+      payloadsBase64: ["AAEAAAAAAAAAAAAAAABFQA=="]
+    });
+
+    const result = backend.finish(handle);
+
+    expect(result.topics[0]?.valueSeries).toEqual([
+      { timestampNs: 1_000_000_000, value: expect.any(Number) }
+    ]);
+  });
+
   it("returns count mismatch findings from the core backend", () => {
     const backend = new TypeScriptMoonBitCoreBackend();
     const handle = backend.create({ timeBasis: "record_time" });
