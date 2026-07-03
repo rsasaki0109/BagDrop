@@ -4,7 +4,7 @@ Playwright recordings of the BagDrop web UI.
 
 | File | Flow |
 | --- | --- |
-| [`demo-clean-bag.gif`](demo-clean-bag.gif) | Drop clean demo bag → Healthy overview → `/odom` intervals/XY → `/imu` and `/cmd_vel` value/angular plots |
+| [`demo-clean-bag.gif`](demo-clean-bag.gif) | Drop clean demo bag → Healthy overview → `/odom` XY → `/imu` and twist value plots on `/cmd_vel` and `/velocity` |
 | [`demo-findings.gif`](demo-findings.gif) | Drop findings demo bag → click finding topic badge → open topic plot |
 
 ## Regenerate

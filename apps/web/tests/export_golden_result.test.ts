@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { ResultBundle } from "../../src/model/result";
 import { toExportableResultBundle } from "../src/report/export";
 import { createExampleResultBundle, createFindingsResultBundle } from "./fixtures/result_bundle";
+import { assertExportBundleShape } from "./validate_export_shape";
 
 const goldenDir = join(import.meta.dirname, "../../../tests/golden");
 
@@ -30,6 +31,8 @@ describe("golden results", () => {
       }
 
       const expected = toExportableResultBundle(JSON.parse(readFileSync(goldenPath, "utf8")) as ResultBundle);
+      assertExportBundleShape(bundle);
+      assertExportBundleShape(expected);
       expect(bundle).toEqual(expected);
     });
   }

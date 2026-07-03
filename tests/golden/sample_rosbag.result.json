@@ -200,9 +200,45 @@
             "pointCount": 3
           }
         ]
+      },
+      {
+        "id": 5,
+        "name": "/velocity",
+        "type": "geometry_msgs/msg/TwistWithCovarianceStamped",
+        "serializationFormat": "cdr",
+        "count": 2,
+        "timeRange": {
+          "startNs": 1900000000,
+          "endNs": 2300000000
+        },
+        "meanRateHz": 5,
+        "maxGapNs": 400000000,
+        "status": "ok",
+        "decodedPayloads": 2,
+        "decodeErrors": 0,
+        "plotTabs": [
+          {
+            "kind": "intervals",
+            "label": "Intervals",
+            "description": "Message interval Δt (seconds) vs bag time. Orange line marks the 5 s large-gap warning threshold.",
+            "pointCount": 1
+          },
+          {
+            "kind": "value",
+            "label": "Value",
+            "description": "Linear x velocity (m/s) over bag time.",
+            "pointCount": 2
+          },
+          {
+            "kind": "angular",
+            "label": "Angular",
+            "description": "Angular z (rad/s) over bag time.",
+            "pointCount": 2
+          }
+        ]
       }
     ],
-    "messageCount": 11,
+    "messageCount": 13,
     "timeRange": {
       "startNs": 1000000000,
       "endNs": 3000000000
@@ -220,7 +256,7 @@
     {
       "id": "message-count",
       "label": "Messages",
-      "value": 11
+      "value": 13
     },
     {
       "id": "storage-status",
@@ -235,12 +271,12 @@
     {
       "id": "stream-batches-read",
       "label": "Stream batches read",
-      "value": 5
+      "value": 6
     },
     {
       "id": "stream-verified-topics",
       "label": "Stream verified topics",
-      "value": 5
+      "value": 6
     },
     {
       "id": "moonbit-backend",
@@ -250,7 +286,7 @@
     {
       "id": "moonbit-batches-consumed",
       "label": "MoonBit batches consumed",
-      "value": 5
+      "value": 6
     }
   ],
   "findings": [],

@@ -55,7 +55,11 @@ async function recordCleanBagDemo(page, baseUrl) {
   frames.push({ png: await captureAppFrame(page), durationSec: 1.4 });
 
   await selectPlotKind(page, "angular");
-  frames.push({ png: await captureAppFrame(page), durationSec: 2.0 });
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.6 });
+
+  await selectTopic(page, "/velocity");
+  await selectPlotKind(page, "value");
+  frames.push({ png: await captureAppFrame(page), durationSec: 1.4 });
 
   return frames;
 }
