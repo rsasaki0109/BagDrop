@@ -109,6 +109,65 @@ fn CdrReader::skip_doubles(self : CdrReader, count : Int) -> Bool {
 }
 
 ///|
+fn CdrReader::read_float64(self : CdrReader) -> Double? {
+  if !self.align(8) || !self.can_read(8) {
+    return None
+  }
+  let value = load_u64_le(self.payload, self.offset).reinterpret_as_double()
+  self.offset = self.offset + 8
+  Some(value)
+}
+
+///|
+fn decode_twist_stamped_linear_x(payload : Bytes) -> Double? {
+  if !is_cdr_le(payload) {
+    return None
+  }
+  let reader = CdrReader::new(payload)
+  if !reader.skip_encapsulation() ||
+    !reader.skip_header_stamp() ||
+    !reader.skip_string() {
+    return None
+  }
+  reader.read_float64()
+}
+
+///|
+fn decode_twist_stamped_angular_z(payload : Bytes) -> Double? {
+  if !is_cdr_le(payload) {
+    return None
+  }
+  let reader = CdrReader::new(payload)
+  if !reader.skip_encapsulation() ||
+    !reader.skip_header_stamp() ||
+    !reader.skip_string() ||
+    !reader.skip_doubles(5) {
+    return None
+  }
+  reader.read_float64()
+}
+
+///|
+pub fn decode_geometry_msgs_twist_stamped_linear_x(payload : Bytes) -> Double? {
+  decode_twist_stamped_linear_x(payload)
+}
+
+///|
+pub fn decode_geometry_msgs_twist_stamped_angular_z(payload : Bytes) -> Double? {
+  decode_twist_stamped_angular_z(payload)
+}
+
+///|
+pub fn decode_geometry_msgs_twist_with_covariance_stamped_linear_x(payload : Bytes) -> Double? {
+  decode_twist_stamped_linear_x(payload)
+}
+
+///|
+pub fn decode_geometry_msgs_twist_with_covariance_stamped_angular_z(payload : Bytes) -> Double? {
+  decode_twist_stamped_angular_z(payload)
+}
+
+///|
 fn CdrReader::skip_u8(self : CdrReader) -> Bool {
   if !self.can_read(1) {
     return false

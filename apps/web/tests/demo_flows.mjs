@@ -31,7 +31,9 @@ export async function waitForCleanDemoReady(page) {
 export async function waitForFindingsDemoReady(page) {
   await page.locator(".finding-list .finding").first().waitFor({ timeout: 20_000 });
   await page.locator(".finding-summary-pill").first().waitFor({ timeout: 20_000 });
-  await page.locator(".health-badge").first().waitFor({ timeout: 20_000 });
+  await page.locator(".health-badge.health-critical").getByText("Critical", { exact: true }).waitFor({
+    timeout: 20_000
+  });
 }
 
 export async function selectTopic(page, topicName) {

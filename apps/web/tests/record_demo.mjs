@@ -72,6 +72,10 @@ async function recordFindingsDemo(page, baseUrl) {
 
   await dropDemoBag(page, await createFindingsDemoDb(), "findings_segment_0.db3");
   await waitForFindingsDemoReady(page);
+  frames.push({ png: await captureAppFrame(page), durationSec: 2.4 });
+
+  await page.locator(".health-card.health-critical").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
   frames.push({ png: await captureAppFrame(page), durationSec: 2.2 });
 
   await jumpToFindingTopic(page, "/diagnostics");

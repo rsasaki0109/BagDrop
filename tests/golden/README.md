@@ -13,4 +13,4 @@ Regenerate both with:
 UPDATE_GOLDEN=1 pnpm --filter @bagdrop/web exec vitest run tests/export_golden_result.test.ts
 ```
 
-Golden topic entries include `plotTabs` metadata, `exportSchemaVersion: 1`, and omit downsampled plot series arrays.
+Golden topic entries include `plotTabs` metadata, `exportSchemaVersion: 1`, and omit downsampled plot series arrays. Golden exports are checked against [`result.export.schema.json`](../schemas/result.export.schema.json) with Ajv in the web test suite.

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bagdrop.local/schemas/result.export.schema.json",
+  "title": "BagDrop export ResultBundle",
+  "allOf": [
+    { "$ref": "result.schema.json" },
+    {
+      "type": "object",
+      "required": ["exportSchemaVersion"],
+      "properties": {
+        "exportSchemaVersion": { "const": 1 },
+        "catalog": {
+          "type": "object",
+          "required": ["topics"],
+          "properties": {
+            "topics": {
+              "type": "array",
+              "items": {
+                "allOf": [
+                  { "$ref": "result.schema.json#/$defs/topicCatalogEntry" },
+                  {
+                    "type": "object",
+                    "required": ["plotTabs"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

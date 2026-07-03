@@ -12,9 +12,150 @@
       "description": "Version of the slim JSON export shape produced by BagDrop downloads and golden fixtures."
     },
     "createdAt": { "type": "string", "format": "date-time" },
-    "catalog": { "type": "object" },
-    "metrics": { "type": "array" },
-    "findings": { "type": "array" }
+    "catalog": { "$ref": "#/$defs/bagCatalog" },
+    "metrics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/metric" }
+    },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    }
   },
-  "additionalProperties": true
+  "additionalProperties": false,
+  "$defs": {
+    "timeRange": {
+      "type": "object",
+      "required": ["startNs", "endNs"],
+      "properties": {
+        "startNs": { "type": ["integer", "null"] },
+        "endNs": { "type": ["integer", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "topicPlotKind": {
+      "type": "string",
+      "enum": ["intervals", "value", "angular", "range", "xy", "latlon"]
+    },
+    "topicPlotTab": {
+      "type": "object",
+      "required": ["kind", "label", "description", "pointCount"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/topicPlotKind" },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "pointCount": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "topicCatalogEntry": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "type",
+        "serializationFormat",
+        "count",
+        "timeRange",
+        "meanRateHz",
+        "maxGapNs",
+        "status"
+      ],
+      "properties": {
+        "id": { "type": "integer" },
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "serializationFormat": { "type": ["string", "null"] },
+        "count": { "type": ["integer", "null"] },
+        "timeRange": { "$ref": "#/$defs/timeRange" },
+        "meanRateHz": { "type": ["number", "null"] },
+        "maxGapNs": { "type": ["integer", "null"] },
+        "status": {
+          "type": "string",
+          "enum": ["ok", "warning", "error", "unknown"]
+        },
+        "decodedPayloads": { "type": ["integer", "null"] },
+        "decodeErrors": { "type": ["integer", "null"] },
+        "plotTabs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/topicPlotTab" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "bagCatalog": {
+      "type": "object",
+      "required": [
+        "inventory",
+        "schemaCapabilities",
+        "topics",
+        "messageCount",
+        "timeRange",
+        "storageStatus",
+        "findings"
+      ],
+      "properties": {
+        "inventory": { "type": "object" },
+        "schemaCapabilities": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "topics": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/topicCatalogEntry" }
+        },
+        "messageCount": { "type": ["integer", "null"] },
+        "timeRange": { "$ref": "#/$defs/timeRange" },
+        "storageStatus": {
+          "type": "string",
+          "enum": ["inventory_only", "sqlite_pending", "ready", "blocked"]
+        },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/finding" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "metric": {
+      "type": "object",
+      "required": ["id", "label", "value"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "value": {
+          "type": ["number", "string", "null"]
+        },
+        "unit": { "type": "string" },
+        "topic": { "type": "string" },
+        "fieldPath": { "type": "string" },
+        "timeBasis": {
+          "type": "string",
+          "enum": ["record_time", "source_time"]
+        }
+      },
+      "additionalProperties": true
+    },
+    "finding": {
+      "type": "object",
+      "required": ["id", "severity", "title", "detail"],
+      "properties": {
+        "id": { "type": "string" },
+        "severity": {
+          "type": "string",
+          "enum": ["info", "warning", "error"]
+        },
+        "title": { "type": "string" },
+        "detail": { "type": "string" },
+        "topic": { "type": "string" },
+        "timeBasis": {
+          "type": "string",
+          "enum": ["record_time", "source_time"]
+        },
+        "evidence": { "type": "object" }
+      },
+      "additionalProperties": true
+    }
+  }
 }

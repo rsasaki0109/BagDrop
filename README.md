@@ -161,7 +161,7 @@ The findings GIF uses the same synthetic `.db3` shape as the golden export. Live
 UPDATE_GOLDEN=1 pnpm --filter @bagdrop/web exec vitest run tests/export_golden_result.test.ts
 ```
 
-Each topic in the exported JSON includes a `plotTabs` array (kind, label, description, pointCount) describing which plot tabs the UI supports. The JSON export omits heavy plot series data but keeps this metadata. Exported files also include `exportSchemaVersion` (currently `1`) so downstream tools can detect the slim export shape.
+Each topic in the exported JSON includes a `plotTabs` array (kind, label, description, pointCount) describing which plot tabs the UI supports. The JSON export omits heavy plot series data but keeps this metadata. Exported files also include `exportSchemaVersion` (currently `1`) so downstream tools can detect the slim export shape. Golden exports are validated against [`schemas/result.export.schema.json`](schemas/result.export.schema.json).
 
 ## Development
 

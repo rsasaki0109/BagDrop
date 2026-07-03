@@ -337,3 +337,21 @@ test "consume batch preserves timestamps beyond int32 range" {
   }
   inspect(topic.max_gap_ns, content="Some(8997000000000)")
 }
+
+///|
+test "decode geometry_msgs twist stamped linear x and angular z" {
+  let payload = @base64.decode(
+    "AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAA4D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJqZmZmZmbm/",
+  )
+  inspect(decode_geometry_msgs_twist_stamped_linear_x(payload), content="Some(0.5)")
+  inspect(decode_geometry_msgs_twist_stamped_angular_z(payload), content="Some(-0.1)")
+}
+
+///|
+test "decode geometry_msgs twist with covariance stamped linear x and angular z" {
+  let payload = @base64.decode(
+    "AAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAA+D8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOg/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  )
+  inspect(decode_geometry_msgs_twist_with_covariance_stamped_linear_x(payload), content="Some(1.5)")
+  inspect(decode_geometry_msgs_twist_with_covariance_stamped_angular_z(payload), content="Some(0.75)")
+}
